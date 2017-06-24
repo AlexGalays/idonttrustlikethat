@@ -1,0 +1,38 @@
+{
+  "name": "validation.ts",
+  "version": "0.0.1",
+  "description": "Validation for TypeScript",
+  "main": "lib/validation.js",
+  "license": "MIT",
+
+  "dependencies": {
+    "space-lift": "0.3.0"
+  },
+
+  "devDependencies": {
+    "typescript": "2.3.4",
+    "mocha": "2.2.5",
+    "expect": "1.8.0",
+    "chalk": "1.1.1"
+  },
+
+  "scripts": {
+    "build": "tsc validation.ts --outDir lib --strict --noUnusedParameters --declaration",
+    "pretest": "npm run build && tsc test/mocha.d.ts test/global.d.ts test/expect.d.ts test/test.ts --strict",
+    "test": "mocha --recursive && node test/testCompilationErrors.js"
+  },
+
+  "typings": "lib/validation.d.ts",
+
+  "files": [
+    "lib"
+  ],
+  "keywords": [
+    "validation",
+    "io",
+    "typescript",
+    "type derivation"
+  ],
+  "author": "AlexGalays",
+  "homepage": "https://github.com/AlexGalays/validation.ts"
+}
