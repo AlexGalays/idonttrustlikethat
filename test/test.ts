@@ -9,11 +9,11 @@ const showErrorMessages = false
 describe('validation', () => {
 
   it('can validate that a value is a null', () => {
-    expect(v.validate(null, v.null).isOk()).toBe(true)
+    expect(v.null.validate(null).isOk()).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
 
-    expect(v.validate(undefined, v.null).isOk()).toBe(false)
-    expect(v.validate({}, v.null).isOk()).toBe(false)
+    expect(v.null.validate(undefined).isOk()).toBe(false)
+    expect(v.null.validate({}).isOk()).toBe(false)
     expect(v.is({}, v.null)).toBe(false)
 
     type Null = typeof v.null.T
@@ -21,11 +21,11 @@ describe('validation', () => {
   })
 
   it('can validate that a value is a string', () => {
-    expect(v.validate('hola', v.string).isOk()).toBe(true)
+    expect(v.string.validate('hola').isOk()).toBe(true)
     expect(v.is('hola', v.string)).toBe(true)
 
-    expect(v.validate(undefined, v.string).isOk()).toBe(false)
-    expect(v.validate({}, v.string).isOk()).toBe(false)
+    expect(v.string.validate(undefined).isOk()).toBe(false)
+    expect(v.string.validate({}).isOk()).toBe(false)
     expect(v.is({}, v.string)).toBe(false)
 
     type String = typeof v.string.T
@@ -33,21 +33,21 @@ describe('validation', () => {
   })
 
   it('can validate a value and map it', () => {
-    const validator = v.map(v.number, x => x * 2)
+    const validator = v.number.map(x => x * 2)
 
-    expect(v.validate(10, validator).get()).toBe(20)
+    expect(validator.validate(10).get()).toBe(20)
 
     type Number = typeof validator.T
     const num: Number = 33
   })
 
   it('can validate a filtered value', () => {
-    const positiveNumber = v.filter(v.number, x => x >= 0)
+    const positiveNumber = v.number.filter(x => x >= 0)
 
-    expect(v.validate(10, positiveNumber).get()).toBe(10)
-    expect(v.validate(-1, positiveNumber).isOk()).toBe(false)
+    expect(positiveNumber.validate(10).get()).toBe(10)
+    expect(positiveNumber.validate(-1).isOk()).toBe(false)
 
-    printErrorMessage(v.validate(-1, positiveNumber))
+    printErrorMessage(positiveNumber.validate(-1))
 
     type PositiveNumber = typeof positiveNumber.T
     const num: PositiveNumber = 33
@@ -55,10 +55,10 @@ describe('validation', () => {
 
   it('can validate an array', () => {
     const numArray = [1, 2, 3]
-    expect(v.validate(numArray, v.array(v.number)).get()).toBe(numArray)
+    expect(v.array(v.number).validate(numArray).get()).toBe(numArray)
 
     const badNumArray = [1, 'oops', 'fuu']
-    const badValidation = v.validate(badNumArray, v.array(v.number)) as any
+    const badValidation = v.array(v.number).validate(badNumArray)
 
     printErrorMessage(badValidation)
 
@@ -76,20 +76,20 @@ describe('validation', () => {
       }))
     })
 
-    const okValidation = v.validate({
+    const okValidation = person.validate({
       id: 123,
       name: 'Alex',
       friends: [{ name: 'bob' }, { name: 'john' }]
-    }, person)
+    })
 
     expect(okValidation.isOk()).toBe(true)
 
 
-    const notOkValidation = v.validate({
+    const notOkValidation = person.validate({
       id: '123',
       name: 'Alex',
       friends: [{ name: 'bob' }, { id: 'john' }]
-    }, person)
+    })
 
     expect(notOkValidation.isOk()).toBe(false)
     expect(!notOkValidation.isOk() && notOkValidation.get().length).toBe(2)
@@ -110,11 +110,11 @@ describe('validation', () => {
     type LOl = keyof typeof phoneMap
     const phoneNumberNames = v.keyof(phoneMap)
 
-    const okValidation = v.validate('mobile', phoneNumberNames)
+    const okValidation = phoneNumberNames.validate('mobile')
 
     expect(okValidation.isOk()).toBe(true)
 
-    const notOkValidation = v.validate('oops', phoneNumberNames)
+    const notOkValidation = phoneNumberNames.validate('oops')
 
     expect(notOkValidation.isOk()).toBe(false)
   })
@@ -122,15 +122,15 @@ describe('validation', () => {
   it('can validate a dictionary', () => {
     const strNumMap = v.dictionary(v.string, v.number)
 
-    const okValidation = v.validate({
+    const okValidation = strNumMap.validate({
       a: 1, b: 2, c: 3
-    }, strNumMap)
+    })
 
     expect(okValidation.isOk()).toBe(true)
 
-    const notOkValidation = v.validate({
+    const notOkValidation = strNumMap.validate({
       a: 1, b: 2, c: '3'
-    }, strNumMap)
+    })
 
     expect(notOkValidation.isOk()).toBe(false)
 
@@ -138,13 +138,13 @@ describe('validation', () => {
     // domain = more precise than strings
     const enumNumMap = v.dictionary(v.keyof(Set('a', 'b').value()), v.number)
 
-    const okValidation2 = v.validate({ a: 1, b: 2 }, enumNumMap)
+    const okValidation2 = enumNumMap.validate({ a: 1, b: 2 })
 
     expect(okValidation2.isOk()).toBe(true)
 
-    const notOkValidation2 = v.validate({
+    const notOkValidation2 = enumNumMap.validate({
       a: 1, bb: 2, c: '3'
-    }, enumNumMap)
+    })
 
     expect(!notOkValidation2.isOk() && notOkValidation2.get().length).toBe(3)
     printErrorMessage(notOkValidation2)
@@ -158,25 +158,23 @@ describe('validation', () => {
       categories: v.array(self)
     }))
 
-    const okValidation = v.validate(
-      { name: 'tools', categories: [{ name: 'piercing', categories: [] }] },
-      category)
+    const okValidation = category.validate(
+      { name: 'tools', categories: [{ name: 'piercing', categories: [] }] })
 
     expect(okValidation.isOk()).toBe(true)
 
-    const notOkValidation = v.validate(
-      { name: 'tools', categories: [{ name2: 'piercing', categories: [] }] },
-      category)
+    const notOkValidation = category.validate(
+      { name: 'tools', categories: [{ name2: 'piercing', categories: [] }] })
 
     expect(!notOkValidation.isOk() && notOkValidation.get().length).toBe(1)
     printErrorMessage(notOkValidation)
   })
 
   it('can validate an ISO date', () => {
-    const okValidation = v.validate('2017-06-23T12:14:38.298Z', v.isoDate)
+    const okValidation = v.isoDate.validate('2017-06-23T12:14:38.298Z')
     expect(okValidation.isOk() && okValidation.get().getFullYear() === 2017).toBe(true)
 
-    const notOkValidation = v.validate('hello', v.isoDate)
+    const notOkValidation = v.isoDate.validate('hello')
     expect(notOkValidation.isOk()).toBe(false)
   })
 
@@ -185,14 +183,14 @@ describe('validation', () => {
       v.string,
       v.object({ name: v.string })
     )
-    const okValidation = v.validate('hello', helloOrObj)
-    const okValidation2 = v.validate({ name: 'hello' }, helloOrObj)
+    const okValidation = helloOrObj.validate('hello')
+    const okValidation2 = helloOrObj.validate({ name: 'hello' })
 
     expect(okValidation.isOk()).toBe(true)
     expect(okValidation2.isOk()).toBe(true)
 
-    const notOkValidation = v.validate(111, helloOrObj)
-    const notOkValidation2 = v.validate({ name2: 'hello' }, helloOrObj)
+    const notOkValidation = helloOrObj.validate(111)
+    const notOkValidation2 = helloOrObj.validate({ name2: 'hello' })
 
     expect(notOkValidation.isOk()).toBe(false)
     expect(notOkValidation2.isOk()).toBe(false)
@@ -204,14 +202,14 @@ describe('validation', () => {
 
     // Union of literals - shortcut
     const unionsOfLiterals = v.union('hello', true, 33)
-    const okValidation3 = v.validate('hello', unionsOfLiterals)
-    const okValidation4 = v.validate(33, unionsOfLiterals)
+    const okValidation3 = unionsOfLiterals.validate('hello')
+    const okValidation4 = unionsOfLiterals.validate(33)
 
     expect(okValidation3.isOk()).toBe(true)
     expect(okValidation4.isOk()).toBe(true)
 
-    const notOkValidation3 = v.validate('hello2', unionsOfLiterals)
-    const notOkValidation4 = v.validate(34, unionsOfLiterals)
+    const notOkValidation3 = unionsOfLiterals.validate('hello2')
+    const notOkValidation4 = unionsOfLiterals.validate(34)
 
     expect(notOkValidation3.isOk()).toBe(false)
     expect(notOkValidation4.isOk()).toBe(false)
@@ -221,26 +219,26 @@ describe('validation', () => {
   it('can validate a literal value', () => {
     const literalStr = v.literal('hello')
 
-    const okValidation = v.validate('hello', literalStr)
+    const okValidation = literalStr.validate('hello')
     expect(okValidation.isOk()).toBe(true)
 
-    const notOkValidation = v.validate('boo', literalStr)
+    const notOkValidation = literalStr.validate('boo')
     expect(notOkValidation.isOk()).toBe(false)
   })
 
   it('can validate an optional value', () => {
     const optionalString = v.optional(v.string)
 
-    const okValidation = v.validate('hello', optionalString)
+    const okValidation = optionalString.validate('hello')
     expect(okValidation.isOk()).toBe(true)
 
-    const okValidation2 = v.validate(undefined, optionalString)
+    const okValidation2 = optionalString.validate(undefined)
     expect(okValidation2.isOk()).toBe(true)
 
-    const notOkValidation = v.validate(null, optionalString)
+    const notOkValidation = optionalString.validate(null)
     expect(notOkValidation.isOk()).toBe(false)
 
-    const notOkValidation2 = v.validate({}, optionalString)
+    const notOkValidation2 = optionalString.validate({})
     expect(notOkValidation2.isOk()).toBe(false)
   })
 

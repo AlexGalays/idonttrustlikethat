@@ -4,17 +4,17 @@ Validation for TypeScript
 
 ## validate
 
-The `validate` function returns a [Result](https://github.com/AlexGalays/spacelift#api.result)  
+Every validator has a `validate` function which returns a [Result](https://github.com/AlexGalays/spacelift#api.result)  
 
 A validated value can be transformed at any point during the validation process (e.g. `isoDate`).  
 Errors are accumulated.  
 
 ```ts
-import { validate, errorDebugString } from 'validation.ts'
+import { errorDebugString } from 'validation.ts'
 
 const myValidator = ...
 
-const result = validate(myJson, myValidator)
+const result = myValidator.validate(myJson)
 
 result.fold(
   errors => console.error(errorDebugString(errors)),
@@ -86,13 +86,13 @@ const validator = dictionary(string, number)
 
 ```ts
 import Set from 'space-lift/object/set'
-import { keyof, validate } from 'validation.ts'
+import { keyof } from 'validation.ts'
 
 const keys = Set('aa', 'bb', 'cc').value()
 
 const keyValidator = keyof(keys)
 
-validate('bb', keyValidator) // Ok<'aa' | 'bb' | 'cc'> = Ok('bb')
+keyValidator.validate('bb') // Ok<'aa' | 'bb' | 'cc'> = Ok('bb')
 
 // keyof typeof keys === typeof keyValidator.T === 'aa' | 'bb' | 'cc'
 ```
@@ -103,7 +103,7 @@ validate('bb', keyValidator) // Ok<'aa' | 'bb' | 'cc'> = Ok('bb')
 ```ts
 import { map, filter, string } from 'validation.ts'
 
-const validator = map(filter(string, str => str.length > 3), str => `${str}...`)
+const validator = string.filter(str => str.length > 3).map(str => `${str}...`)
 ```
 
 ## recursion

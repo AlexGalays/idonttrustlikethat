@@ -5,9 +5,18 @@ import { Result, Ok, Err } from 'space-lift/result'
 //  Setup
 //--------------------------------------
 
-export interface Validator<T> {
+export abstract class Validator<T> {
   readonly T: T
-  readonly validate: (value: Value, context: Context) => Validation<T>
+
+  abstract validate(value: Value, context?: Context): Validation<T>
+
+  map<B>(fn: (value: T) => B): Validator<B> {
+    return new MappedValidator(this, fn)
+  }
+
+  filter(fn: (value: T) => boolean): Validator<T> {
+    return new FilteredValidator(this, fn)
+  }
 }
 
 export type Any = Validator<Object>
@@ -47,49 +56,43 @@ export function getContext(name: string, parent?: string) {
   return (parent ? `${parent} / ${name}` : name) as Context
 }
 
-export function validate<T>(value: Value, validator: Validator<T>): Validation<T> {
-  return validator.validate(value, getContext('root'))
-}
+const rootContext = getContext('root')
+
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
-  return validate(value, validator).isOk()
+  return validator.validate(value).isOk()
 }
 
 //--------------------------------------
 //  Primitives
 //--------------------------------------
 
-export class NullValidator {
-  T: null
-  validate(v: Value, c: Context): Validation<null> {
-    return v === null ? success(v) : typeFailure(v, c, 'null')
+export class NullValidator extends Validator<null> {
+  validate(v: Value, c: Context = rootContext) {
+    return v === null ? success(v as null) : typeFailure(v, c, 'null')
   }
 }
 
-export class UndefinedValidator {
-  T: undefined
-  validate(v: Value, c: Context): Validation<undefined> {
-    return v === void 0 ? success(v) : typeFailure(v, c, 'undefined')
+export class UndefinedValidator extends Validator<undefined> {
+  validate(v: Value, c: Context = rootContext) {
+    return v === void 0 ? success(v as undefined) : typeFailure(v, c, 'undefined')
   }
 }
 
-export class StringValidator implements Validator<string> {
-  T: string
-  validate(v: Value, c: Context): Validation<string> {
+export class StringValidator extends Validator<string> {
+  validate(v: Value, c: Context = rootContext) {
     return typeof v === 'string' ? success(v) : typeFailure(v, c, 'string')
   }
 }
 
-export class NumberValidator {
-  T: number
-  validate(v: Value, c: Context): Validation<number> {
+export class NumberValidator extends Validator<number> {
+  validate(v: Value, c: Context = rootContext) {
     return typeof v === 'number' ? success(v) : typeFailure(v, c, 'number')
   }
 }
 
-export class BooleanValidator {
-  T: boolean
-  validate(v: Value, c: Context): Validation<boolean> {
+export class BooleanValidator extends Validator<boolean> {
+  validate(v: Value, c: Context = rootContext) {
     return typeof v === 'boolean' ? success(v) : typeFailure(v, c, 'boolean')
   }
 }
@@ -98,15 +101,15 @@ export class BooleanValidator {
 //  map
 //--------------------------------------
 
-export class MappedValidator<A extends Any, B> {
-  constructor(private validator: A, private f: (a: TypeOf<A>) => B) {}
+export class MappedValidator<A, B> extends Validator<B> {
+  constructor(
+    private validator: Validator<A>,
+    private f: (a: A) => B) { super() }
 
-  T: B
-
-  validate(v: Value, c: Context) { return this.validator.validate(v, c).map(this.f) }
+  validate(v: Value, c: Context = rootContext) { return this.validator.validate(v, c).map(this.f) }
 }
 
-export function map<A extends Any, B>(validator: A, f: (a: TypeOf<A>) => B): MappedValidator<A, B> {
+export function map<A, B>(validator: Validator<A>, f: (a: A) => B): MappedValidator<A, B> {
   return new MappedValidator(validator, f)
 }
 
@@ -114,19 +117,19 @@ export function map<A extends Any, B>(validator: A, f: (a: TypeOf<A>) => B): Map
 //  filter
 //--------------------------------------
 
-export class FilteredValidator<A extends Any> {
-  constructor(private validator: A, private predicate: (a: TypeOf<A>) => boolean) {}
+export class FilteredValidator<A> extends Validator<A> {
+  constructor(
+    private validator: Validator<A>,
+    private predicate: (a: A) => boolean) { super() }
 
-  T: TypeOf<A>
-
-  validate(v: Value, c: Context) {
+  validate(v: Value, c: Context = rootContext) {
     const validated = this.validator.validate(v, c)
     return validated.flatMap(v =>
       this.predicate(v) ? validated : failure(c, `Predicate failed for value ${pretty(v)}`))
   }
 }
 
-export function filter<A extends Any>(validator: A, predicate: (a: TypeOf<A>) => boolean): FilteredValidator<A> {
+export function filter<A>(validator: Validator<A>, predicate: (a: A) => boolean): FilteredValidator<A> {
   return new FilteredValidator(validator, predicate)
 }
 
@@ -134,15 +137,13 @@ export function filter<A extends Any>(validator: A, predicate: (a: TypeOf<A>) =>
 //  array
 //--------------------------------------
 
-export class ArrayValidator<A extends Any> {
-  constructor(private validator: A) {}
+export class ArrayValidator<A> extends Validator<A[]> {
+  constructor(private validator: Validator<A>) { super() }
 
-  T: TypeOf<A>[]
-
-  validate(v: Value, c: Context): Validation<A[]> {
+  validate(v: Value, c: Context = rootContext) {
     if (!Array.isArray(v)) return typeFailure(v, c, 'array')
 
-    const validatedArray: TypeOf<A>[] = []
+    const validatedArray: A[] = []
     const errors: ValidationError[] = []
     let changed = false
 
@@ -163,7 +164,7 @@ export class ArrayValidator<A extends Any> {
   }
 }
 
-export function array<A extends Any>(validator: A): Validator<TypeOf<A>[]> {
+export function array<A>(validator: Validator<A>): Validator<A[]> {
   return new ArrayValidator(validator)
 }
 
@@ -175,19 +176,17 @@ export type Props = Record<string, Any>
 
 export type InterfaceFor<P extends Props> = { [K in keyof P]: TypeOf<P[K]> }
 
-export class ObjectValidator<P extends Props> {
-  constructor(private props: P) {}
+export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>> {
+  constructor(private props: P) { super() }
 
-  T: InterfaceFor<P>
-
-  validate(v: Value, c: Context): Validation<InterfaceFor<P>> {
+  validate(v: Value, c: Context = rootContext) {
     if (v == null || typeof v !== 'object') return typeFailure(v, c, 'object')
 
     const validatedObject: any = { ...v }
     const errors: ValidationError[] = []
     let changed = false
 
-    for (let key in this.props) { 
+    for (let key in this.props) {
       const value = (v as any)[key]
       const validator = this.props[key]
       const validation = validator.validate(value, getContext(key, c))
@@ -212,12 +211,10 @@ export function object<P extends Props>(props: P): Validator<InterfaceFor<P>> {
 //  keyof
 //--------------------------------------
 
-export class KeyOfValidator<KEYS extends object> {
-  constructor(private keys: KEYS) {}
+export class KeyOfValidator<KEYS extends object> extends Validator<keyof KEYS> {
+  constructor(private keys: KEYS) { super() }
 
-  T: keyof KEYS
-
-  validate(v: Value, c: Context): Validation<keyof KEYS> {
+  validate(v: Value, c: Context = rootContext): Validation<keyof KEYS> {
     return this.keys.hasOwnProperty(v as string)
       ? success(v as any)
       : failure(c, `${pretty(v)} is not a key of ${pretty(this.keys)}`)
@@ -232,12 +229,12 @@ export function keyof<KEYS extends object>(keys: KEYS): KeyOfValidator<KEYS> {
 //  dictionary
 //--------------------------------------
 
-export class DictionaryValidator<D extends Validator<string>, CD extends Any> {
-  constructor(private domain: D, private codomain: CD) {}
+export class DictionaryValidator<K extends string, V> extends Validator<Record<K, V>> {
+  constructor(
+    private domain: Validator<K>,
+    private codomain: Validator<V>) { super() }
 
-  T: Record<TypeOf<D>, TypeOf<CD>>
-
-  validate(v: Value, c: Context) {
+  validate(v: Value, c: Context = rootContext) {
     if (v == null || typeof v !== 'object') return typeFailure(v, c, 'object')
 
     const validatedDict: any = {}
@@ -273,9 +270,9 @@ export class DictionaryValidator<D extends Validator<string>, CD extends Any> {
   }
 }
 
-export function dictionary<D extends Validator<string>, CD extends Any>(
-  domain: D,
-  codomain: CD): Validator<Record<TypeOf<D>, TypeOf<CD>>> {
+export function dictionary<K extends string, V>(
+  domain: Validator<K>,
+  codomain: Validator<V>): Validator<Record<K, V>> {
 
   return new DictionaryValidator(domain, codomain)
 }
@@ -286,12 +283,10 @@ export function dictionary<D extends Validator<string>, CD extends Any>(
 
 export type Literal = string | number | boolean
 
-class LiteralValidator<V extends Literal> {
-  constructor(private value: V) {}
+class LiteralValidator<V extends Literal> extends Validator<V> {
+  constructor(private value: V) { super() }
 
-  T: V
-
-  validate(v: Value, c: Context): Validation<V> {
+  validate(v: Value, c: Context = rootContext) {
     return v === this.value
       ? success(v as V)
       : failure(c, `Expected literal value ${this.value} but found ${pretty(v)}`)
@@ -306,12 +301,10 @@ export function literal<V extends Literal>(value: V): Validator<V> {
 //  union
 //--------------------------------------
 
-export class UnionValidator<A extends Any> {
-  constructor(private validators: A[]) {}
+export class UnionValidator<A> extends Validator<A> {
+  constructor(private validators: Validator<A>[]) { super() }
 
-  T: TypeOf<A>
-
-  validate(v: Value, c: Context): Validation<TypeOf<A>> {
+  validate(v: Value, c: Context = rootContext) {
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, c)
       if (validation.isOk()) return validation
@@ -320,12 +313,10 @@ export class UnionValidator<A extends Any> {
   }
 }
 
-export class LiteralUnionValidator<A extends Literal> {
-  constructor(private values: A[]) {}
+export class LiteralUnionValidator<A extends Literal> extends Validator<A> {
+  constructor(private values: A[]) { super() }
 
-  T: A
-
-  validate(v: Value, c: Context): Validation<A> {
+  validate(v: Value, c: Context) {
     for (let i = 0; i < this.values.length; i++) {
       const validator = literal(this.values[i])
       const validation = validator.validate(v, c)
@@ -336,35 +327,35 @@ export class LiteralUnionValidator<A extends Literal> {
 }
 
 
-export function union<A extends Any, B extends Any>(a: A, b: B): UnionValidator<A | B>
-export function union<A extends Literal, B extends Literal>(a: A, b: B): LiteralUnionValidator<A | B>
+export function union<A, B>(a: Validator<A>, b: Validator<B>): Validator<A | B>
+export function union<A extends Literal, B extends Literal>(a: A, b: B): Validator<A | B>
 
-export function union<A extends Any, B extends Any, C extends Any>(a: A, b: B, c: C): UnionValidator<A | B | C>
-export function union<A extends Literal, B extends Literal, C extends Literal>(a: A, b: B, c: C): LiteralUnionValidator<A | B | C>
+export function union<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<A | B | C>
+export function union<A extends Literal, B extends Literal, C extends Literal>(a: A, b: B, c: C): Validator<A | B | C>
 
-export function union<A extends Any, B extends Any, C extends Any, D extends Any>(a: A, b: B, c: C, d: D): UnionValidator<A | B | C | D>
-export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal>(a: A, b: B, c: C, d: D): LiteralUnionValidator<A | B | C | D>
+export function union<A, B, C, D>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>): Validator<A | B | C | D>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal>(a: A, b: B, c: C, d: D): Validator<A | B | C | D>
 
 export function union(...values: any[]): any {
-  return (typeof values[0] === 'object') ? new UnionValidator(values) : new LiteralUnionValidator(values)
+  return (typeof values[0] === 'object')
+    ? new UnionValidator(values)
+    : new LiteralUnionValidator(values)
 }
 
 //--------------------------------------
 //  optional
 //--------------------------------------
 
-export class OptionalValidator<V extends Any> {
-  constructor(private validator: V) {}
+export class OptionalValidator<V> extends Validator<V | undefined> {
+  constructor(private validator: Validator<V>) { super() }
 
-  T: TypeOf<V> | undefined
-
-  validate(v: Value, c: Context): Validation<TypeOf<V> | undefined> {
-    if (v === undefined) return success(v)
+  validate(v: Value, c: Context = rootContext) {
+    if (v === undefined) return success(v as undefined)
     return this.validator.validate(v, c)
   }
 }
 
-export function optional<V extends Any>(validator: V): OptionalValidator<V> {
+export function optional<V>(validator: Validator<V>): Validator<V | undefined> {
   return new OptionalValidator(validator)
 }
 
@@ -372,8 +363,9 @@ export function optional<V extends Any>(validator: V): OptionalValidator<V> {
 //  recursion
 //--------------------------------------
 
-export function recursion<T>(definition: (self: Any) => Any): Validator<T> {
-  const Self = { validate: (v, c) => Result.validate(v, c) } as Validator<any>
+export function recursion<T>(definition: (self: Validator<T>) => Any): Validator<T> {
+  const Self = new (Validator as any)()
+  Self.validate = (v: Value, c: Context = rootContext) => Result.validate(v, c)
   const Result: any = definition(Self)
   return Result
 }
@@ -382,11 +374,9 @@ export function recursion<T>(definition: (self: Any) => Any): Validator<T> {
 //  isoDate
 //--------------------------------------
 
-export class IsoDateValidator {
+export class IsoDateValidator extends Validator<Date> {
 
-  T: Date
-
-  validate(v: Value, c: Context) {
+  validate(v: Value, c: Context = rootContext) {
     if (typeof v !== 'string') return typeFailure(v, c, 'string')
     const date = new Date(v)
     return isNaN(date.getTime())
