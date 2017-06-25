@@ -1,6 +1,6 @@
 {
   "name": "validation.ts",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Validation for TypeScript",
   "main": "lib/validation.js",
   "license": "MIT",
@@ -17,7 +17,7 @@
   },
 
   "scripts": {
-    "build": "tsc validation.ts --outDir lib --strict --noUnusedParameters --declaration",
+    "build": "tsc validation.ts --outDir lib --strict --noUnusedParameters --declaration --lib es5,es6",
     "pretest": "npm run build && tsc test/mocha.d.ts test/global.d.ts test/expect.d.ts test/test.ts --strict",
     "test": "mocha --recursive && node test/testCompilationErrors.js"
   },

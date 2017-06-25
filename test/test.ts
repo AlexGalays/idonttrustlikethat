@@ -4,7 +4,7 @@ import 'space-lift/all'
 import Set from 'space-lift/object/set'
 
 
-const showErrorMessages = false
+const showErrorMessages = true
 
 describe('validation', () => {
 
@@ -44,10 +44,13 @@ describe('validation', () => {
   it('can validate a filtered value', () => {
     const positiveNumber = v.number.filter(x => x >= 0)
 
+    function isPositiveNumber(n: number) { return n >= 0 }
+
     expect(positiveNumber.validate(10).get()).toBe(10)
     expect(positiveNumber.validate(-1).isOk()).toBe(false)
 
     printErrorMessage(positiveNumber.validate(-1))
+    printErrorMessage(v.number.filter(isPositiveNumber).validate(-1))
 
     type PositiveNumber = typeof positiveNumber.T
     const num: PositiveNumber = 33

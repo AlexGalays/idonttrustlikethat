@@ -124,8 +124,17 @@ export class FilteredValidator<A> extends Validator<A> {
 
   validate(v: Value, c: Context = rootContext) {
     const validated = this.validator.validate(v, c)
-    return validated.flatMap(v =>
-      this.predicate(v) ? validated : failure(c, `Predicate failed for value ${pretty(v)}`))
+    return validated.flatMap(v => {
+      if (this.predicate(v)) return validated
+
+      let predicateName = this.predicate.name
+      if (!predicateName) {
+        const functionStr = this.predicate.toString()
+        predicateName = functionStr.length > 60 ? functionStr.slice(0, 60) + '...' : functionStr
+      }
+
+      return failure(c, `The value ${pretty(v)} failed the predicate "${predicateName}"`)
+    })
   }
 }
 
