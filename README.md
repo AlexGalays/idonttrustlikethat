@@ -22,6 +22,18 @@ result.fold(
 )
 ```
 
+In case of errors, The `Result` contains an Array of `{ message: string, context: string }` where `message` is a debug error message for developers and `context` is the path where the error occured (e.g `root / data / 0 / name`)
+
+`errorDebugString` will give you a complete debug string of all errors, e.g.
+
+```
+At [root / c] Error validating the key. "c" is not a key of {
+  "a": true,
+  "b": true
+}
+At [root / c] Error validating the value. Type error: expected number but got string
+```
+
 
 ## primitives
 
