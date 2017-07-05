@@ -1,12 +1,12 @@
 {
   "name": "validation.ts",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Validation for TypeScript",
   "main": "lib/validation.js",
   "license": "MIT",
 
   "dependencies": {
-    "space-lift": "0.3.0"
+    "space-lift": "0.3.1"
   },
 
   "devDependencies": {

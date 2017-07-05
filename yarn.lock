@@ -138,9 +138,9 @@ sigmund@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/sigmund/-/sigmund-1.0.1.tgz#3ff21f198cad2175f9f3b781853fd94d0d19b590"
 
-space-lift@0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/space-lift/-/space-lift-0.3.0.tgz#ff9b13b89c2bc30d47a1c86d2356127d63a68b4a"
+space-lift@0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/space-lift/-/space-lift-0.3.1.tgz#1e3d260e2957015f7e547d162ff93de8ea04bdb7"
   dependencies:
     immupdate "1.1.0"
 
