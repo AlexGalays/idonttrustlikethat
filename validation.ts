@@ -17,6 +17,12 @@ export abstract class Validator<T> {
   filter(fn: (value: T) => boolean): Validator<T> {
     return new FilteredValidator(this, fn)
   }
+
+  tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
+  tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
+  tagged<TAG>(): Validator<TAG> {
+    return this as {} as Validator<TAG>
+  }
 }
 
 export type Any = Validator<Object>

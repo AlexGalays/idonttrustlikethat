@@ -49,3 +49,7 @@ const hello: HelloOrObj = {}
 const aaa = v.literal('AAA')
 type OnlyAAA = typeof aaa.T
 const bbb: OnlyAAA = 'bbb'
+
+
+// tagged() called on a non Primitive validator (string | number) @shouldNotCompile
+const validator = v.object({}).tagged<{}>()

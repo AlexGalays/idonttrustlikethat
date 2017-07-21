@@ -245,6 +245,27 @@ describe('validation', () => {
     expect(notOkValidation2.isOk()).toBe(false)
   })
 
+  it('can validate a primitive and tag it', () => {
+    type UserId = string & { __tag: 'UserId' }
+
+    const userIdValidator = v.string.tagged<UserId>()
+
+    const okValidation = userIdValidator.validate('abcd')
+
+    if (okValidation.isOk()) {
+      // Check assignation/type
+      const idAsUserId: UserId = okValidation.get()
+      const idAsString: string = okValidation.get()
+    }
+    else {
+      throw new Error()
+    }
+
+    const notOkValidation = v.string.tagged<UserId>().validate({})
+
+    expect(notOkValidation.isOk()).toBe(false)
+  })
+
 })
 
 

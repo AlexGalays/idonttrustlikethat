@@ -48,6 +48,18 @@ v.undefined
 v.isoDate
 ```
 
+### tagged primitive
+
+Sometimes, a `string` or a `number` is not just any string or number but carry extra meaning, e.g: `email`, `uuid`, `userId`, `KiloGram`, etc.  
+Tagging such a primitive as it's validated can help make the downstream code more robust.
+
+```ts
+type UserId = string & { __tag: 'UserId' } // Note: You can use any naming convention for the tag.
+
+const userIdValidator = v.string.tagged<UserId>()
+```
+
+
 ## literal
 
 ```ts
