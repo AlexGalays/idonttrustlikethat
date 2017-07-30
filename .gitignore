@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
 
-/lib
-/test/*.js
+commonjs
+es
+test/*.js
 *.log

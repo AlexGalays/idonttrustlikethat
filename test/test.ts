@@ -1,7 +1,7 @@
-import * as v from '../'
+import * as v from '..'
 import * as expect from 'expect'
-import 'space-lift/all'
-import Set from 'space-lift/object/set'
+import 'space-lift/commonjs/all'
+import { Set } from 'space-lift'
 
 
 const showErrorMessages = true
@@ -110,7 +110,6 @@ describe('validation', () => {
 
   it('can validate that a value is a key of an object', () => {
     const phoneMap = Set('mobile', 'work', 'landline').value()
-    type LOl = keyof typeof phoneMap
     const phoneNumberNames = v.keyof(phoneMap)
 
     const okValidation = phoneNumberNames.validate('mobile')

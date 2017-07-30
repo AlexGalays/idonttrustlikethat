@@ -1,4 +1,4 @@
-import { Result, Ok, Err } from 'space-lift/result'
+import { Result, Ok, Err } from 'space-lift'
 
 
 //--------------------------------------

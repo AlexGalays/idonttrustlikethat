@@ -1,28 +1,31 @@
 {
   "name": "validation.ts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Validation for TypeScript",
-  "main": "lib/validation.js",
   "license": "MIT",
 
+  "main": "commonjs/validation.js",
+  "module": "es/validation.js",
+  "typings": "commonjs/validation.d.ts",
+
   "dependencies": {
-    "space-lift": "0.3.1"
+    "space-lift": "0.4.1"
   },
 
   "devDependencies": {
-    "typescript": "2.3.4",
+    "typescript": "2.4.2",
     "mocha": "2.2.5",
     "expect": "1.8.0",
     "chalk": "1.1.1"
   },
 
   "scripts": {
-    "build": "tsc validation.ts --outDir lib --strict --noUnusedParameters --declaration --lib es5,es6",
+    "build": "npm run build-es && npm run build-commonjs",
+    "build-es": "tsc validation.ts --outDir es --strict --noUnusedParameters --declaration --lib es5,es6 --module es6 --moduleResolution node",
+    "build-commonjs": "tsc validation.ts --outDir commonjs --strict --noUnusedParameters --declaration --lib es5,es6",
     "pretest": "npm run build && tsc test/mocha.d.ts test/global.d.ts test/expect.d.ts test/test.ts --strict",
     "test": "mocha --recursive && node test/testCompilationErrors.js"
   },
-
-  "typings": "lib/validation.d.ts",
 
   "files": [
     "lib"
