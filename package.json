@@ -28,7 +28,8 @@
   },
 
   "files": [
-    "lib"
+    "commonjs",
+    "es"
   ],
   "keywords": [
     "validation",
