@@ -1,6 +1,6 @@
 {
   "name": "validation.ts",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Validation for TypeScript",
   "license": "MIT",
 
@@ -9,7 +9,7 @@
   "typings": "commonjs/validation.d.ts",
 
   "dependencies": {
-    "space-lift": "0.4.3"
+    "space-lift": ">=0.0.0"
   },
 
   "devDependencies": {
