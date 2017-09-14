@@ -203,12 +203,14 @@ describe('validation', () => {
 
 
     // Union of literals - shortcut
-    const unionsOfLiterals = v.union('hello', true, 33)
+    const unionsOfLiterals = v.union(null, 'hello', true, 33)
     const okValidation3 = unionsOfLiterals.validate('hello')
     const okValidation4 = unionsOfLiterals.validate(33)
+    const okValidation5 = unionsOfLiterals.validate(null)
 
     expect(okValidation3.isOk()).toBe(true)
     expect(okValidation4.isOk()).toBe(true)
+    expect(okValidation5.isOk()).toBe(true)
 
     const notOkValidation3 = unionsOfLiterals.validate('hello2')
     const notOkValidation4 = unionsOfLiterals.validate(34)
@@ -262,6 +264,33 @@ describe('validation', () => {
 
     const notOkValidation = v.string.tagged<UserId>().validate({})
 
+    expect(notOkValidation.isOk()).toBe(false)
+  })
+
+  it('can validate a combination of object and union values', () => {
+    const validator = v.object({
+      id: v.string,
+      params: v.union(v.null, v.object({ id: v.string }))
+    })
+
+    const okValidation = validator.validate({ id: '1', params: null })
+    const okValidation2 = validator.validate({ id: '1', params: { id: '2' } })
+    const notOkValidation = validator.validate({ id: '1', params: {} })
+
+    expect(okValidation.isOk()).toBe(true)
+    expect(okValidation2.isOk()).toBe(true)
+    expect(notOkValidation.isOk()).toBe(false)
+  })
+
+  it('can validate a combination of dictionary and union values', () => {
+    const validator = v.dictionary(v.string, v.union(v.null, v.object({ id: v.string })))
+
+    const okValidation = validator.validate({ id: null })
+    const okValidation2 = validator.validate({ id: { id: '2' } })
+    const notOkValidation = validator.validate({ id: {} })
+
+    expect(okValidation.isOk()).toBe(true)
+    expect(okValidation2.isOk()).toBe(true)
     expect(notOkValidation.isOk()).toBe(false)
   })
 

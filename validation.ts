@@ -296,7 +296,7 @@ export function dictionary<K extends string, V>(
 //  literal
 //--------------------------------------
 
-export type Literal = string | number | boolean
+export type Literal = string | number | boolean | null | undefined
 
 class LiteralValidator<V extends Literal> extends Validator<V> {
   constructor(private value: V) { super() }
@@ -352,7 +352,8 @@ export function union<A, B, C, D>(a: Validator<A>, b: Validator<B>, c: Validator
 export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal>(a: A, b: B, c: C, d: D): Validator<A | B | C | D>
 
 export function union(...values: any[]): any {
-  return (typeof values[0] === 'object')
+  const probe = values[0]
+  return (probe && typeof probe === 'object')
     ? new UnionValidator(values)
     : new LiteralUnionValidator(values)
 }
