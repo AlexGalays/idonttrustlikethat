@@ -25,7 +25,7 @@ export abstract class Validator<T> {
   }
 }
 
-export type Any = Validator<Object>
+export type Any = Validator<Value>
 export type TypeOf<V extends Any> = V['T']
 
 export interface ValidationError {
