@@ -351,6 +351,24 @@ export function union<A extends Literal, B extends Literal, C extends Literal>(a
 export function union<A, B, C, D>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>): Validator<A | B | C | D>
 export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal>(a: A, b: B, c: C, d: D): Validator<A | B | C | D>
 
+export function union<A, B, C, D, E>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>): Validator<A | B | C | D | E>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal>(a: A, b: B, c: C, d: D, e: E): Validator<A | B | C | D | E>
+
+export function union<A, B, C, D, E, F>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>): Validator<A | B | C | D | E | F>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal, F extends Literal>(a: A, b: B, c: C, d: D, e: E, f: F): Validator<A | B | C | D | E | F>
+
+export function union<A, B, C, D, E, F, G>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>): Validator<A | B | C | D | E | F | G>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal, F extends Literal, G extends Literal>(a: A, b: B, c: C, d: D, e: E, f: F, g: G): Validator<A | B | C | D | E | F | G>
+
+export function union<A, B, C, D, E, F, G, H>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>): Validator<A | B | C | D | E | F | G | H>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal, F extends Literal, G extends Literal, H extends Literal>(a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H): Validator<A | B | C | D | E | F | G | H>
+
+export function union<A, B, C, D, E, F, G, H, I>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>): Validator<A | B | C | D | E | F | G | H | I>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal, F extends Literal, G extends Literal, H extends Literal, I extends Literal>(a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I): Validator<A | B | C | D | E | F | G | H | I>
+
+export function union<A, B, C, D, E, F, G, H, I, J>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>, j: Validator<J>): Validator<A | B | C | D | E | F | G | H | I | J>
+export function union<A extends Literal, B extends Literal, C extends Literal, D extends Literal, E extends Literal, F extends Literal, G extends Literal, H extends Literal, I extends Literal, J extends Literal>(a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J): Validator<A | B | C | D | E | F | G | H | I | J>
+
 export function union(...values: any[]): any {
   const probe = values[0]
   return (probe && typeof probe === 'object')
