@@ -215,7 +215,7 @@ export class TupleValidator extends Validator<any> {
   }
 }
 
-export function tuple(): Validator<never[]>
+export function tuple<A = never>(): Validator<A[]>
 export function tuple<A>(a: Validator<A>): Validator<[A]>
 export function tuple<A, B>(a: Validator<A>, b: Validator<B>): Validator<[A, B]>
 export function tuple<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<[A, B, C]>
