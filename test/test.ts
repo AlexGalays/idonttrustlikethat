@@ -294,6 +294,28 @@ describe('validation', () => {
     expect(notOkValidation.isOk()).toBe(false)
   })
 
+  it('can validate a tuple', () => {
+    const validator = v.tuple(v.number, v.string, v.null)
+
+    const okValidation = validator.validate([10, '10', null])
+
+    // The length is strictly validated so the type doesn't lie if we map, etc
+    const notOkValidation = validator.validate([10, '10', null, 10, 10, 10])
+    const notOkValidation2 = validator.validate([10, 10, null])
+    const notOkValidation3 = validator.validate(33)
+
+    expect(okValidation.isOk()).toBe(true)
+    expect(notOkValidation.isOk()).toBe(false)
+    expect(notOkValidation2.isOk()).toBe(false)
+    expect(notOkValidation3.isOk()).toBe(false)
+
+    printErrorMessage(notOkValidation)
+    printErrorMessage(notOkValidation2)
+    printErrorMessage(notOkValidation3)
+  })
+
+  
+
 })
 
 

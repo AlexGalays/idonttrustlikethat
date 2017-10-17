@@ -77,6 +77,14 @@ import { array, string } from 'validation.ts'
 const validator = array(string)
 ```
 
+## tuple
+
+```ts
+import { tuple, string, number } from 'validation.ts'
+
+const validator = tuple(string, number) // Tuple2
+```
+
 
 ## object, literal union, optional
 

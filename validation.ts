@@ -184,6 +184,54 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
 }
 
 //--------------------------------------
+//  tuple
+//--------------------------------------
+
+export class TupleValidator extends Validator<any> {
+  constructor(private validators: Validator<any>[]) { super() }
+
+  validate(v: Value, c: Context = rootContext) {
+    if (!Array.isArray(v)) return typeFailure(v, c, 'Tuple')
+    if (v.length !== this.validators.length) return failure(c, `Expected a Tuple${v.length} but got a Tuple${this.validators.length}`)
+
+    const validatedArray: any[] = []
+    const errors: ValidationError[] = []
+    let changed = false
+
+    for (let i = 0; i < v.length; i++) {
+      const item  = v[i]
+      const validation = this.validators[i].validate(item, getContext(String(i), c))
+
+      if (validation.isOk()) {
+        changed = changed || validation.get() !== item
+        validatedArray.push(validation.get())
+      }
+      else {
+        pushAll(errors, validation.get())
+      }
+    }
+
+    return errors.length ? Err(errors) : Ok(changed ? validatedArray : v)
+  }
+}
+
+export function tuple<A, B>(a: Validator<A>, b: Validator<B>): Validator<[A, B]>
+export function tuple<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<[A, B, C]>
+export function tuple<A, B, C, D>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>): Validator<[A, B, C, D]>
+export function tuple<A, B, C, D, E>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>): Validator<[A, B, C, D, E]>
+export function tuple<A, B, C, D, E, F>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>): Validator<[A, B, C, D, E, F]>
+export function tuple<A, B, C, D, E, F, G>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>): Validator<[A, B, C, D, E, F, G]>
+export function tuple<A, B, C, D, E, F, G, H>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>): Validator<[A, B, C, D, E, F, G, H]>
+export function tuple<A, B, C, D, E, F, G, H, I>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>): Validator<[A, B, C, D, E, F, G, H, I]>
+export function tuple<A, B, C, D, E, F, G, H, I, J>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>, j: Validator<J>): Validator<[A, B, C, D, E, F, G, H, I, J]>
+export function tuple<A, B, C, D, E, F, G, H, I, J, K>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>, j: Validator<J>, k: Validator<K>): Validator<[A, B, C, D, E, F, G, H, I, J, K]>
+export function tuple<A, B, C, D, E, F, G, H, I, J, K, L>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>, g: Validator<G>, h: Validator<H>, i: Validator<I>, j: Validator<J>, k: Validator<K>, l: Validator<L>): Validator<[A, B, C, D, E, F, G, H, I, J, K, L]>
+
+export function tuple(...validators: any[]): any {
+  return new TupleValidator(validators)
+}
+
+//--------------------------------------
 //  object
 //--------------------------------------
 
