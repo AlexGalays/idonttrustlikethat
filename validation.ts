@@ -192,7 +192,7 @@ export class TupleValidator extends Validator<any> {
 
   validate(v: Value, c: Context = rootContext) {
     if (!Array.isArray(v)) return typeFailure(v, c, 'Tuple')
-    if (v.length !== this.validators.length) return failure(c, `Expected a Tuple${v.length} but got a Tuple${this.validators.length}`)
+    if (v.length !== this.validators.length) return failure(c, `Expected a Tuple${this.validators.length} but got a Tuple${v.length}`)
 
     const validatedArray: any[] = []
     const errors: ValidationError[] = []
