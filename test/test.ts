@@ -295,6 +295,7 @@ describe('validation', () => {
   })
 
   it('can validate a tuple', () => {
+    const tuple0 = v.tuple()
     const tuple1 = v.tuple(v.number)
     const validator = v.tuple(v.number, v.string, v.null)
 
@@ -305,6 +306,7 @@ describe('validation', () => {
     const notOkValidation2 = validator.validate([10, 10, null])
     const notOkValidation3 = validator.validate(33)
 
+    expect(tuple0.validate([]).isOk()).toBe(true)
     expect(tuple1.validate([10]).isOk()).toBe(true)
     expect(okValidation.isOk()).toBe(true)
     expect(notOkValidation.isOk()).toBe(false)
