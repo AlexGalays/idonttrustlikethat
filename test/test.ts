@@ -197,6 +197,7 @@ describe('validation', () => {
     expect(notOkValidation.isOk()).toBe(false)
     expect(notOkValidation2.isOk()).toBe(false)
     printErrorMessage(notOkValidation)
+    printErrorMessage(notOkValidation2)
 
     type HelloOrObj = typeof helloOrObj.T
     const hello: HelloOrObj = 'hello'

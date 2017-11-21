@@ -76,9 +76,9 @@ has-ansi@^2.0.0:
   dependencies:
     ansi-regex "^2.0.0"
 
-immupdate@1.1.4:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/immupdate/-/immupdate-1.1.4.tgz#c6a1894101b2df67d052fae2083fc50193a52c09"
+immupdate@1.1.6:
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/immupdate/-/immupdate-1.1.6.tgz#34c622c21f86591f62c4b782ddc022be4406a521"
 
 inherits@2, inherits@2.0.1:
   version "2.0.1"
@@ -138,11 +138,11 @@ sigmund@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/sigmund/-/sigmund-1.0.1.tgz#3ff21f198cad2175f9f3b781853fd94d0d19b590"
 
-space-lift@0.4.3:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/space-lift/-/space-lift-0.4.3.tgz#9e751505796c302dff8d4aa01e8354e6c30ab344"
+space-lift@>=0.0.0:
+  version "0.6.4"
+  resolved "https://registry.yarnpkg.com/space-lift/-/space-lift-0.6.4.tgz#a1bd9fdcafb70416f4f55fac7a6adb7d37e2d782"
   dependencies:
-    immupdate "1.1.4"
+    immupdate "1.1.6"
 
 strip-ansi@^3.0.0:
   version "3.0.1"
@@ -158,9 +158,9 @@ supports-color@~1.2.0:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-1.2.1.tgz#12ee21507086cd98c1058d9ec0f4ac476b7af3b2"
 
-typescript@2.4.2:
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.2.tgz#f8395f85d459276067c988aa41837a8f82870844"
+typescript@2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.1.tgz#ef39cdea27abac0b500242d6726ab90e0c846631"
 
 util@0.10.3:
   version "0.10.3"
