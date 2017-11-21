@@ -370,19 +370,20 @@ export class UnionValidator<A> extends Validator<A> {
   constructor(private validators: Validator<A>[]) { super() }
 
   validate(v: Value, c: Context = rootContext) {
-    const errors: ValidationError[] = []
+    const errors: ValidationError[][] = []
 
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, c)
       if (validation.isOk())
         return validation
       else
-        pushAll(errors, validation.get())
+        errors.push(validation.get())
     }
 
-    const detailString = errors.map((e, index) => `Union type #${index} => At [${e.context}] ${e.message}`).join('\n')
+    const detailString = errors.map((es, index) =>
+      `Union type #${index} => \n  ${errorDebugString(es).replace(/\n/g, '\n  ')}`).join('\n')
 
-    return failure(c, `The value ${pretty(v)} is not part of the union: \n${detailString}`)
+    return failure(c, `The value ${pretty(v)} \nis not part of the union: \n\n${detailString}`)
   }
 }
 

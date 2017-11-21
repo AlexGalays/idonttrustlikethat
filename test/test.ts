@@ -183,10 +183,10 @@ describe('validation', () => {
   it('can validate an union of types', () => {
     const helloOrObj = v.union(
       v.string,
-      v.object({ name: v.string })
+      v.object({ id: v.string, name: v.string })
     )
     const okValidation = helloOrObj.validate('hello')
-    const okValidation2 = helloOrObj.validate({ name: 'hello' })
+    const okValidation2 = helloOrObj.validate({ id: '123', name: 'hello' })
 
     expect(okValidation.isOk()).toBe(true)
     expect(okValidation2.isOk()).toBe(true)
