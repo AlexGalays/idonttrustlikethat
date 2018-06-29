@@ -259,9 +259,8 @@ export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>>
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     if (v == null || typeof v !== 'object') return typeFailure(v, c, 'object')
 
-    const validatedObject: any = { ...v }
+    const validatedObject: any = {}
     const errors: ValidationError[] = []
-    let changed = false
 
     for (let key in this.props) {
       const transformedKey = config.transformer !== undefined
@@ -274,14 +273,13 @@ export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>>
       const validation = validator.validate(value, config, getContext(transformedKey, c))
 
       if (validation.isOk()) {
-        changed = changed || value !== validation.get()
         validatedObject[key] = validation.get()
       }
       else {
         pushAll(errors, validation.get())
       }
     }
-    return errors.length ? Err(errors) : Ok(changed ? validatedObject : v)
+    return errors.length ? Err(errors) : Ok(validatedObject)
   }
 }
 

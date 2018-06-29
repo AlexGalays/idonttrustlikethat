@@ -325,16 +325,34 @@ describe('validation', () => {
     const burger = v.object({
       id: v.number,
       meatCooking: v.string,
-      awesomeSides: v.array(v.string)
+      awesomeSides: v.array(v.string),
+      options: v.object({
+        doubleBacon: v.boolean
+      })
     })
 
     const okSnakeCased = burger.validate({
       id: 123,
       'meat_cooking': 'rare',
-      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ]
+      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ],
+      options: {
+        'double_bacon': true
+      }
     }, { transformer: v.snakeCaseTransformer })
 
-    expect(okSnakeCased.isOk()).toBe(true)
+    const expected = {
+      id: 123,
+      meatCooking: 'rare',
+      awesomeSides: [ 'loaded fries', 'barbecue sauce' ],
+      options: {
+        doubleBacon: true
+      }
+    }
+
+    if (!okSnakeCased.isOk())
+      throw new Error('Should be OK')
+
+    expect(okSnakeCased.get()).toEqual(expected)
   })
 
   it('report transformed field names to the user in case of error', () => {
@@ -352,6 +370,8 @@ describe('validation', () => {
     }, { transformer: v.snakeCaseTransformer })
 
     expect(fieldInError.isOk()).toBe(false)
+
+    printErrorMessage(fieldInError)
 
     if(!fieldInError.isOk()) {
       const { context } = fieldInError.get()[0]
