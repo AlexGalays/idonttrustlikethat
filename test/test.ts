@@ -82,10 +82,17 @@ describe('validation', () => {
     const okValidation = person.validate({
       id: 123,
       name: 'Alex',
-      friends: [{ name: 'bob' }, { name: 'john' }]
+      friends: [{ name: 'bob' }, { name: 'john' }],
+      someIrrelevantKey: true
     })
 
-    expect(okValidation.isOk()).toBe(true)
+    if (!okValidation.isOk()) throw new Error('Should be OK')
+
+    expect(okValidation.get()).toEqual({
+      id: 123,
+      name: 'Alex',
+      friends: [{ name: 'bob' }, { name: 'john' }]
+    })
 
 
     const notOkValidation = person.validate({

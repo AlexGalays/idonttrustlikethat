@@ -269,7 +269,6 @@ export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>>
 
       const value = (v as any)[transformedKey]
       const validator = this.props[key]
-
       const validation = validator.validate(value, config, getContext(transformedKey, c))
 
       if (validation.isOk()) {
