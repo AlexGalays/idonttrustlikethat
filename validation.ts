@@ -247,9 +247,9 @@ export function tuple(...validators: any[]): any {
 
 export type Props = Record<string, Any>
 
-export type InterfaceFor<P extends Props> = { [K in keyof P]: TypeOf<P[K]> }
+export type ObjectOf<P extends Props> = { [K in keyof P]: TypeOf<P[K]> }
 
-export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>> {
+export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
   constructor(private props: P) { super() }
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
@@ -278,7 +278,7 @@ export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>>
   }
 }
 
-export function object<P extends Props>(props: P): Validator<InterfaceFor<P>> {
+export function object<P extends Props>(props: P): Validator<ObjectOf<P>> {
   return new ObjectValidator(props)
 }
 
