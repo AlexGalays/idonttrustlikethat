@@ -70,6 +70,10 @@ const rootContext = getContext('root')
 
 const defaultConfig: Configuration = {}
 
+export const snakeCaseTransformer = (key: string): string =>
+  key
+    .replace(new RegExp('([A-Z]+)([A-Z][a-z])'), '$1_$2')
+    .replace(new RegExp('([a-z\\\\d])([A-Z])'), '$1_$2').toLocaleLowerCase()
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).isOk()
@@ -260,9 +264,14 @@ export class ObjectValidator<P extends Props> extends Validator<InterfaceFor<P>>
     let changed = false
 
     for (let key in this.props) {
-      const value = (v as any)[key]
+      const transformedKey = config.transformer !== undefined
+        ? config.transformer(key)
+        : key
+
+      const value = (v as any)[transformedKey]
       const validator = this.props[key]
-      const validation = validator.validate(value, config, getContext(key, c))
+
+      const validation = validator.validate(value, config, getContext(transformedKey, c))
 
       if (validation.isOk()) {
         changed = changed || value !== validation.get()
