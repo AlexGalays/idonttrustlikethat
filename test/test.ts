@@ -150,7 +150,7 @@ describe('validation', () => {
 
     expect(!notOkValidation2.isOk() && notOkValidation2.get().length).toBe(3)
     printErrorMessage(notOkValidation2)
-  })  
+  })
 
   it('can be recursive', () => {
     type Category = { name: string, categories: Category[] }
@@ -319,7 +319,63 @@ describe('validation', () => {
     printErrorMessage(notOkValidation3)
   })
 
-  
+
+  it('can transform snake cased inputs into camel case before validating', () => {
+
+    const burger = v.object({
+      id: v.number,
+      meatCooking: v.string,
+      awesomeSides: v.array(v.string)
+    })
+
+    const okSnakeCased = burger.validate({
+      id: 123,
+      'meat_cooking': 'rare',
+      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ]
+    }, { transformer: v.snakeCaseTransformer })
+
+    expect(okSnakeCased.isOk()).toBe(true)
+  })
+
+  it('report transformed field names to the user in case of error', () => {
+
+    const burger = v.object({
+      id: v.number,
+      meatCooking: v.string,
+      awesomeSides: v.array(v.string)
+    })
+
+    const fieldInError = burger.validate({
+      id: 123,
+      'meat_cooking': 42,
+      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ]
+    }, { transformer: v.snakeCaseTransformer })
+
+    expect(fieldInError.isOk()).toBe(false)
+
+    if(!fieldInError.isOk()) {
+      const { context } = fieldInError.get()[0]
+      expect(context).toEqual('root / meat_cooking')
+    }
+  })
+
+  it('should be strict on input casing when using a transformer', () => {
+
+    const burger = v.object({
+      id: v.number,
+      meatCooking: v.string,
+      awesomeSides: v.array(v.string)
+    })
+
+    const errorCamelCased = burger.validate({
+      id: 456,
+      meatCooking: 'blue',
+      awesomeSides: [ 'potatoes', 'ketchup' ]
+    }, { transformer: v.snakeCaseTransformer })
+
+    expect(errorCamelCased.isOk()).toBe(false)
+
+  })
 
 })
 
