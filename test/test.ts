@@ -58,7 +58,7 @@ describe('validation', () => {
 
   it('can validate an array', () => {
     const numArray = [1, 2, 3]
-    expect(v.array(v.number).validate(numArray).get()).toBe(numArray)
+    expect(v.array(v.number).validate(numArray).get()).toEqual(numArray)
 
     const badNumArray = [1, 'oops', 'fuu']
     const badValidation = v.array(v.number).validate(badNumArray)

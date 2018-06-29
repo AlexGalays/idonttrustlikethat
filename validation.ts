@@ -172,14 +172,12 @@ export class ArrayValidator<A> extends Validator<A[]> {
 
     const validatedArray: A[] = []
     const errors: ValidationError[] = []
-    let changed = false
 
     for (let i = 0; i < v.length; i++) {
       const item  = v[i]
       const validation = this.validator.validate(item, config, getContext(String(i), c))
 
       if (validation.isOk()) {
-        changed = changed || validation.get() !== item
         validatedArray.push(validation.get())
       }
       else {
@@ -187,7 +185,7 @@ export class ArrayValidator<A> extends Validator<A[]> {
       }
     }
 
-    return errors.length ? Err(errors) : Ok(changed ? validatedArray : v)
+    return errors.length ? Err(errors) : Ok(validatedArray)
   }
 }
 
@@ -208,14 +206,12 @@ export class TupleValidator extends Validator<any> {
 
     const validatedArray: any[] = []
     const errors: ValidationError[] = []
-    let changed = false
 
     for (let i = 0; i < v.length; i++) {
       const item  = v[i]
       const validation = this.validators[i].validate(item, config, getContext(String(i), c))
 
       if (validation.isOk()) {
-        changed = changed || validation.get() !== item
         validatedArray.push(validation.get())
       }
       else {
@@ -223,7 +219,7 @@ export class TupleValidator extends Validator<any> {
       }
     }
 
-    return errors.length ? Err(errors) : Ok(changed ? validatedArray : v)
+    return errors.length ? Err(errors) : Ok(validatedArray)
   }
 }
 
@@ -318,7 +314,6 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
 
     const validatedDict: any = {}
     const errors: ValidationError[] = []
-    let changed = false
 
     for (let key in v) {
       const value = (v as any)[key]
@@ -328,7 +323,6 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
       const codomainValidation = this.codomain.validate(value, config, context)
 
       if (domainValidation.isOk()) {
-        changed = changed || key !== domainValidation.get()
         key = domainValidation.get()
       }
       else {
@@ -337,7 +331,6 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
       }
 
       if (codomainValidation.isOk()) {
-        changed = changed || value !== codomainValidation.get()
         validatedDict[key] = codomainValidation.get()
       }
       else {
@@ -345,7 +338,7 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
         pushAll(errors, error.map(e => ({ context, message: `Error validating the value. ${e.message}` })))
       }
     }
-    return errors.length ? Err(errors) : Ok(changed ? validatedDict : v)
+    return errors.length ? Err(errors) : Ok(validatedDict)
   }
 }
 
