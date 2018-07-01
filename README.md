@@ -34,7 +34,6 @@ At [root / c] Error validating the key. "c" is not a key of {
 At [root / c] Error validating the value. Type error: expected number but got string
 ```
 
-
 ## primitives
 
 ```ts
@@ -173,6 +172,27 @@ type Person = {
 */
 ```
 
+## Configuration
+
+A Configuration object can be passed to modify the default behavior of the validators:
+
+**Configuration.transformer**
+
+Transforms every keys of every objects before validating.
+
+```ts
+const burger = v.object({
+  options: v.object({
+    doubleBacon: v.boolean
+  })
+})
+
+const ok = burger.validate({
+  options: {
+    'double_bacon': true
+  }
+}, { transformer: v.snakeCaseTransformer })
+```
 
 ## Thanks
 
