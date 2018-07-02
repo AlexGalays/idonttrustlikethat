@@ -400,7 +400,7 @@ export class UnionValidator<A> extends Validator<A> {
 export class LiteralUnionValidator<A extends Literal> extends Validator<A> {
   constructor(private values: A[]) { super() }
 
-  validate(v: Value, config: Configuration = defaultConfig, c: Context) {
+  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     for (let i = 0; i < this.values.length; i++) {
       const validator = literal(this.values[i])
       const validation = validator.validate(v, config, c)
