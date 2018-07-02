@@ -70,10 +70,12 @@ const rootContext = getContext('root')
 
 const defaultConfig: Configuration = {}
 
+const upperThenLower = /([A-Z]+)([A-Z][a-z])/g
+const lowerThenUpper = /([a-z\\\\d])([A-Z])/g
 export const snakeCaseTransformation = (key: string): string =>
   key
-    .replace(new RegExp('([A-Z]+)([A-Z][a-z])'), '$1_$2')
-    .replace(new RegExp('([a-z\\\\d])([A-Z])'), '$1_$2')
+    .replace(upperThenLower, '$1_$2')
+    .replace(lowerThenUpper, '$1_$2')
     .toLocaleLowerCase()
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {

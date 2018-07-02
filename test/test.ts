@@ -332,7 +332,7 @@ describe('validation', () => {
     const burger = v.object({
       id: v.number,
       meatCooking: v.string,
-      awesomeSides: v.array(v.string),
+      awesomeSidesNomNom: v.array(v.string),
       options: v.object({
         doubleBacon: v.boolean
       })
@@ -341,7 +341,7 @@ describe('validation', () => {
     const okSnakeCased = burger.validate({
       id: 123,
       'meat_cooking': 'rare',
-      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ],
+      'awesome_sides_nom_nom': [ 'loaded fries', 'barbecue sauce' ],
       options: {
         'double_bacon': true
       }
@@ -350,7 +350,7 @@ describe('validation', () => {
     const expected = {
       id: 123,
       meatCooking: 'rare',
-      awesomeSides: [ 'loaded fries', 'barbecue sauce' ],
+      awesomeSidesNomNom: [ 'loaded fries', 'barbecue sauce' ],
       options: {
         doubleBacon: true
       }
