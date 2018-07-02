@@ -176,7 +176,7 @@ type Person = {
 
 A Configuration object can be passed to modify the default behavior of the validators:
 
-**Configuration.transformer**
+**Configuration.transformObjectKeys**
 
 Transforms every keys of every objects before validating.
 
@@ -191,7 +191,7 @@ const ok = burger.validate({
   options: {
     'double_bacon': true
   }
-}, { transformer: v.snakeCaseTransformer })
+}, { transformObjectKeys: v.snakeCaseTransformation })
 ```
 
 ## Thanks

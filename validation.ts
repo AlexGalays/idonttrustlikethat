@@ -38,7 +38,7 @@ export type Value = Object | null | undefined
 export type Context = string & { __tag: 'context' }
 
 export type Configuration = {
-  transformer?: (key: string) => string
+  transformObjectKeys?: (key: string) => string
 }
 
 export type Validation<T> = Result<ValidationError[], T>
@@ -70,10 +70,11 @@ const rootContext = getContext('root')
 
 const defaultConfig: Configuration = {}
 
-export const snakeCaseTransformer = (key: string): string =>
+export const snakeCaseTransformation = (key: string): string =>
   key
     .replace(new RegExp('([A-Z]+)([A-Z][a-z])'), '$1_$2')
-    .replace(new RegExp('([a-z\\\\d])([A-Z])'), '$1_$2').toLocaleLowerCase()
+    .replace(new RegExp('([a-z\\\\d])([A-Z])'), '$1_$2')
+    .toLocaleLowerCase()
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).isOk()
@@ -259,8 +260,8 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
     const errors: ValidationError[] = []
 
     for (let key in this.props) {
-      const transformedKey = config.transformer !== undefined
-        ? config.transformer(key)
+      const transformedKey = config.transformObjectKeys !== undefined
+        ? config.transformObjectKeys(key)
         : key
 
       const value = (v as any)[transformedKey]

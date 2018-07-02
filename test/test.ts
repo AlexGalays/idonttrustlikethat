@@ -345,7 +345,7 @@ describe('validation', () => {
       options: {
         'double_bacon': true
       }
-    }, { transformer: v.snakeCaseTransformer })
+    }, { transformObjectKeys: v.snakeCaseTransformation })
 
     const expected = {
       id: 123,
@@ -362,7 +362,7 @@ describe('validation', () => {
     expect(okSnakeCased.get()).toEqual(expected)
   })
 
-  it('report transformed field names to the user in case of error', () => {
+  it('reports transformed key names to the user in case of error', () => {
 
     const burger = v.object({
       id: v.number,
@@ -374,7 +374,7 @@ describe('validation', () => {
       id: 123,
       'meat_cooking': 42,
       'awesome_sides': [ 'loaded fries', 'barbecue sauce' ]
-    }, { transformer: v.snakeCaseTransformer })
+    }, { transformObjectKeys: v.snakeCaseTransformation })
 
     expect(fieldInError.isOk()).toBe(false)
 
@@ -386,7 +386,7 @@ describe('validation', () => {
     }
   })
 
-  it('should be strict on input casing when using a transformer', () => {
+  it('should be strict on input casing when using transformObjectKeys', () => {
 
     const burger = v.object({
       id: v.number,
@@ -398,7 +398,7 @@ describe('validation', () => {
       id: 456,
       meatCooking: 'blue',
       awesomeSides: [ 'potatoes', 'ketchup' ]
-    }, { transformer: v.snakeCaseTransformer })
+    }, { transformObjectKeys: v.snakeCaseTransformation })
 
     expect(errorCamelCased.isOk()).toBe(false)
 
