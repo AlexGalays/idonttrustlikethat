@@ -102,6 +102,11 @@ const person = object({
 Note: For bigger unions of strings, consider using the `keyof` validator instead.
 
 
+## option
+
+Whereas `optional` returns an `T | undefined`, `option` return an `Option<T>`
+
+
 ## dictionary
 
 A dictionary is an object where all keys and all values share a common type.

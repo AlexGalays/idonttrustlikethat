@@ -254,6 +254,22 @@ describe('validation', () => {
     expect(notOkValidation2.isOk()).toBe(false)
   })
 
+  it('can validate an option', () => {
+    const stringOption = v.option(v.string)
+
+    const okValidation = stringOption.validate('hello')
+    expect(okValidation.isOk() && expect(okValidation.get().get()).toBe('hello'))
+
+    const okValidation2 = stringOption.validate(undefined)
+    expect(okValidation2.isOk() && expect(okValidation2.get().isDefined()).toBe(false))
+
+    const okValidation3 = stringOption.validate(null)
+    expect(okValidation3.isOk() && expect(okValidation3.get().isDefined()).toBe(false))
+
+    const notOkValidation = stringOption.validate({})
+    expect(notOkValidation.isOk()).toBe(false)
+  })
+
   it('can validate a primitive and tag it', () => {
     type UserId = string & { __tag: 'UserId' }
 

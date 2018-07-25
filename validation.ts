@@ -1,4 +1,4 @@
-import { Result, Ok, Err } from 'space-lift'
+import { Result, Ok, Err, Option, None, Some } from 'space-lift'
 
 
 //--------------------------------------
@@ -6,7 +6,7 @@ import { Result, Ok, Err } from 'space-lift'
 //--------------------------------------
 
 export abstract class Validator<T> {
-  readonly T: T
+  readonly T: T = null as any as T // Phantom type
 
   abstract validate(value: Value, config?: Configuration, context?: Context): Validation<T>
 
@@ -460,6 +460,23 @@ export class OptionalValidator<V> extends Validator<V | undefined> {
 
 export function optional<V>(validator: Validator<V>): Validator<V | undefined> {
   return new OptionalValidator(validator)
+}
+
+//--------------------------------------
+//  option
+//--------------------------------------
+
+export class OptionValidator<V> extends Validator<Option<V>> {
+  constructor(private validator: Validator<V>) { super() }
+
+  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
+    if (v === undefined || v === null) return success(None)
+    return this.validator.validate(v, config, c).map(Some)
+  }
+}
+
+export function option<V>(validator: Validator<V>): Validator<Option<V>> {
+  return new OptionValidator(validator)
 }
 
 //--------------------------------------
