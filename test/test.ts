@@ -420,6 +420,20 @@ describe('validation', () => {
 
   })
 
+  it('should allow missing keys for optional object keys when using the generated type', () => {
+    const options = v.object({
+      name: v.string,
+      age: v.optional(v.number)
+    })
+
+    type Options = typeof options.T
+
+    // Should compile, even if we didn't specify 'age'
+    const a: Options = {
+      name: 'a'
+    }
+  })
+
 })
 
 

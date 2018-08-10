@@ -250,7 +250,10 @@ export function tuple(...validators: any[]): any {
 
 export type Props = Record<string, Any>
 
-export type ObjectOf<P extends Props> = { [K in keyof P]: TypeOf<P[K]> }
+type OptionalKeys<P extends Props> = { [K in keyof P]: undefined extends TypeOf<P[K]> ? K : never }[keyof P]
+type MandatoryKeys<P extends Props> = { [K in keyof P]: undefined extends TypeOf<P[K]> ? never : K }[keyof P]
+
+export type ObjectOf<P extends Props> = { [K in MandatoryKeys<P>]: TypeOf<P[K]> } & { [K in OptionalKeys<P>]?: TypeOf<P[K]> }
 
 export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
   constructor(private props: P) { super() }
