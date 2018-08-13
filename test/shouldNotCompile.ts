@@ -45,6 +45,17 @@ type HelloOrObj = typeof helloOrObj.T
 const hello: HelloOrObj = {}
 
 
+// Deriving from an intersection type and assigning to an unrelated type @shouldNotCompile
+
+const fooAndBar = v.intersection(
+  v.object({ foo: v.number }),
+  v.object({ bar: v.string })
+)
+
+type FooAndBar = typeof fooAndBar.T
+const foo: FooAndBar = { foo: 10 }
+
+
 // Assigning to the wrong literal @shouldNotCompile
 const aaa = v.literal('AAA')
 type OnlyAAA = typeof aaa.T

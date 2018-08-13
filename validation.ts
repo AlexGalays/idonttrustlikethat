@@ -274,7 +274,8 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
       const validation = validator.validate(value, config, getContext(transformedKey, c))
 
       if (validation.isOk()) {
-        validatedObject[key] = validation.get()
+        if (validation.get() !== undefined)
+          validatedObject[key] = validation.get()
       }
       else {
         pushAll(errors, validation.get())
@@ -373,6 +374,43 @@ class LiteralValidator<V extends Literal> extends Validator<V> {
 
 export function literal<V extends Literal>(value: V): Validator<V> {
   return new LiteralValidator(value)
+}
+
+//--------------------------------------
+//  intersection
+//--------------------------------------
+
+class IntersectionValidator<A> extends Validator<A> {
+  constructor(private validators: Validator<any>[]) { super() }
+
+  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
+    const result: any = {}
+
+    for (let i = 0; i < this.validators.length; i++) {
+      const validation = this.validators[i].validate(v, config, c)
+      
+      if (validation.isOk()) {
+        Object.assign(result, validation.get())
+      }
+      else {
+        return validation
+      }
+    }
+
+    return success(result)
+  }
+}
+
+export function intersection<A, B>(a: Validator<A>, b: Validator<B>): Validator<A & B>
+export function intersection<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<A & B & C>
+export function intersection<A, B, C>(a: Validator<A>, b: Validator<B>, c: Validator<C>): Validator<A & B & C>
+export function intersection<A, B, C, D>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>): Validator<A & B & C & D>
+export function intersection<A, B, C, D, E>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>): Validator<A & B & C & D & E>
+export function intersection<A, B, C, D, E, F>(a: Validator<A>, b: Validator<B>, c: Validator<C>, d: Validator<D>, e: Validator<E>, f: Validator<F>): Validator<A & B & C & D & E & F>
+
+
+export function intersection(...values: any[]): any {
+  return new IntersectionValidator(values)
 }
 
 //--------------------------------------

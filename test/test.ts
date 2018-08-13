@@ -187,6 +187,47 @@ describe('validation', () => {
     expect(notOkValidation.isOk()).toBe(false)
   })
 
+  it('can validate an intersection of types', () => {
+
+    const flying = v.object({
+      flyingDistance: v.number
+    })
+
+    const squirrel = v.object({
+      family: v.literal('Sciuridae'),
+      isCute: v.optional(v.boolean)
+    })
+
+    const flyingSquirrel = v.intersection(flying, squirrel)
+
+    const vulture = {
+      flyingDistance: 5000,
+      family: 'Accipitridae',
+      isCute: false
+    }
+
+    const notOkValidation = flyingSquirrel.validate(vulture)
+    expect(notOkValidation.isOk()).toBe(false)
+
+    printErrorMessage(notOkValidation)
+
+    const bob = {
+      flyingDistance: 90,
+      family: 'Sciuridae' as 'Sciuridae',
+      hasAnAgenda: true
+    }
+
+    const okValidation = flyingSquirrel.validate(bob)
+    expect(okValidation.isOk() && okValidation.get()).toEqual({
+      flyingDistance: 90,
+      family: 'Sciuridae'
+    })
+
+    // smoke-test generated type
+    type Squirel = typeof flyingSquirrel.T
+    const x: Squirel = bob
+  })
+
   it('can validate an union of types', () => {
     const helloOrObj = v.union(
       v.string,
