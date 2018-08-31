@@ -384,13 +384,13 @@ class IntersectionValidator<A> extends Validator<A> {
   constructor(private validators: Validator<any>[]) { super() }
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
-    const result: any = {}
+    let result: any = {}
 
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, config, c)
       
       if (validation.isOk()) {
-        Object.assign(result, validation.get())
+        result = { ...result, ...validation.get() }
       }
       else {
         return validation

@@ -1,6 +1,6 @@
 {
   "name": "validation.ts",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "Validation for TypeScript",
   "license": "MIT",
   "main": "commonjs/validation.js",
@@ -13,7 +13,7 @@
     "chalk": "1.1.1",
     "expect": "1.8.0",
     "mocha": "2.2.5",
-    "typescript": "2.9.2"
+    "typescript": "3.0.3"
   },
   "scripts": {
     "build": "npm run build-es && npm run build-commonjs",
