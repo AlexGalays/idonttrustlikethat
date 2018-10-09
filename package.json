@@ -1,20 +1,23 @@
 {
   "name": "validation.ts",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "description": "Validation for TypeScript",
   "license": "MIT",
   "main": "commonjs/validation.js",
   "module": "es/validation.js",
   "typings": "commonjs/validation.d.ts",
+
   "dependencies": {
     "space-lift": ">=0.0.0"
   },
+
   "devDependencies": {
     "chalk": "1.1.1",
     "expect": "1.8.0",
     "mocha": "2.2.5",
-    "typescript": "3.0.3"
+    "typescript": "3.1.1"
   },
+
   "scripts": {
     "build": "npm run build-es && npm run build-commonjs",
     "build-es": "tsc validation.ts --outDir es --strict --noUnusedParameters --declaration --lib dom,es5,es6 --module es6 --moduleResolution node",

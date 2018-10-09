@@ -17,6 +17,8 @@ const person = v.object({
   }))
 })
 
+type Person = typeof person.T
+
 // Deriving the type and then assigning to a completely wrong type @shouldNotCompile
 const c: typeof person.T = undefined
 

@@ -250,10 +250,14 @@ export function tuple(...validators: any[]): any {
 
 export type Props = Record<string, Any>
 
-type OptionalKeys<P extends Props> = { [K in keyof P]: undefined extends TypeOf<P[K]> ? K : never }[keyof P]
-type MandatoryKeys<P extends Props> = { [K in keyof P]: undefined extends TypeOf<P[K]> ? never : K }[keyof P]
+// Unpack helps TS inference. It worked without it in TS 3.0 but no longer does in 3.1.
+type Unpack<P extends Props> = { [K in keyof P]: P[K]['T'] }
+type OptionalKeys<T> = { [K in keyof T]: undefined extends T[K] ? K : never }[keyof T]
+type MandatoryKeys<T> = { [K in keyof T]: undefined extends T[K] ? never : K }[keyof T]
 
-export type ObjectOf<P extends Props> = { [K in MandatoryKeys<P>]: TypeOf<P[K]> } & { [K in OptionalKeys<P>]?: TypeOf<P[K]> }
+export type ObjectOf<P extends Props> = 
+  { [K in MandatoryKeys<Unpack<P>>]: Unpack<P>[K] } &
+  { [K in OptionalKeys<Unpack<P>>]?: Unpack<P>[K] }
 
 export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
   constructor(private props: P) { super() }
