@@ -76,7 +76,7 @@ export const snakeCaseTransformation = (key: string): string =>
   key
     .replace(upperThenLower, '$1_$2')
     .replace(lowerThenUpper, '$1_$2')
-    .toLocaleLowerCase()
+    .toLowerCase()
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).isOk()
