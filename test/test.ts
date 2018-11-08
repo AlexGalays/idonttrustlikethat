@@ -461,6 +461,20 @@ describe('validation', () => {
 
   })
 
+  it('default to international locale conversion and pass the turkish test', () => {
+
+    const burger = v.object({
+      burgerId: v.number,
+    })
+
+    const expected = burger.validate({
+      'burger_id': 456,
+    }, { transformObjectKeys: v.snakeCaseTransformation })
+
+    expect(expected.isOk()).toBe(true)
+    expect(expected.get()).toEqual({ burgerId: 456 })
+  })
+
   it('should allow missing keys for optional object keys when using the generated type', () => {
     const options = v.object({
       name: v.string,

@@ -13,6 +13,7 @@
 
   "devDependencies": {
     "chalk": "1.1.1",
+    "cross-env": "5.2.0",
     "expect": "1.8.0",
     "mocha": "2.2.5",
     "typescript": "3.1.1"
@@ -23,7 +24,8 @@
     "build-es": "tsc validation.ts --outDir es --strict --noUnusedParameters --declaration --lib dom,es5,es6 --module es6 --moduleResolution node",
     "build-commonjs": "tsc validation.ts --outDir commonjs --strict --noUnusedParameters --declaration --lib dom,es5,es6",
     "pretest": "npm run build && tsc test/mocha.d.ts test/global.d.ts test/expect.d.ts test/test.ts --strict",
-    "test": "mocha --recursive && node test/testCompilationErrors.js"
+    "test": "mocha --recursive && node test/testCompilationErrors.js",
+    "locale-test": "cross-env LANG=tr_TR npm run test"
   },
   "files": [
     "commonjs",
