@@ -1,5 +1,7 @@
 # validation.ts
-Validation for TypeScript  
+Validation for TypeScript
+
+This module helps validating incoming JSON, url params, etc in a type safe manner.
 
 
 ## validate
