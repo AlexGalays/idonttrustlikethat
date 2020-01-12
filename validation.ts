@@ -11,11 +11,19 @@ export abstract class Validator<T> {
   abstract validate(value: Value, config?: Configuration, context?: Context): Validation<T>
 
   map<B>(fn: (value: T) => B): Validator<B> {
-    return new MappedValidator(this, fn)
+    return this.flatMap(v => Ok(fn(v)))
   }
 
   filter(fn: (value: T) => boolean): Validator<T> {
-    return new FilteredValidator(this, fn)
+    return this.flatMap(v => fn(v) ? Ok(v) : Err(`The value ${pretty(v)} failed a predicate"`))
+  }
+
+  flatMap<B>(fn: (value: T) => Result<string, B>): Validator<B> {
+    return this.transform(r => r.isOk() ? fn(r.get()) : (r as Err<ValidationError[], never>))
+  }
+
+  transform<B>(fn: (result: Validation<T>) => Result<string | ValidationError[], B>): Validator<B> {
+    return new TransformValidator(this, fn);
   }
 
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
@@ -117,50 +125,27 @@ export class BooleanValidator extends Validator<boolean> {
 }
 
 //--------------------------------------
-//  map
+//  transform
 //--------------------------------------
 
-export class MappedValidator<A, B> extends Validator<B> {
+export class TransformValidator<A, B> extends Validator<B> {
   constructor(
     private validator: Validator<A>,
-    private f: (a: A) => B) { super() }
-
-  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
-    return this.validator.validate(v, config, c).map(this.f)
-  }
-}
-
-export function map<A, B>(validator: Validator<A>, f: (a: A) => B): MappedValidator<A, B> {
-  return new MappedValidator(validator, f)
-}
-
-//--------------------------------------
-//  filter
-//--------------------------------------
-
-export class FilteredValidator<A> extends Validator<A> {
-  constructor(
-    private validator: Validator<A>,
-    private predicate: (a: A) => boolean) { super() }
+    private f: (a: Validation<A>) => Result<string | ValidationError[], B>) { super() }
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     const validated = this.validator.validate(v, config, c)
-    return validated.flatMap(v => {
-      if (this.predicate(v)) return validated
+    const transformed = this.f(validated)
+    if (transformed.isOk())
+      return success(transformed.get())
 
-      let predicateName = this.predicate.name
-      if (!predicateName) {
-        const functionStr = this.predicate.toString()
-        predicateName = functionStr.length > 60 ? functionStr.slice(0, 60) + '...' : functionStr
-      }
+    const error = transformed.get();
 
-      return failure(c, `The value ${pretty(v)} failed the predicate "${predicateName}"`)
-    })
+    if (typeof error === 'string')
+      return failure(c, error);
+
+    return Err(error);
   }
-}
-
-export function filter<A>(validator: Validator<A>, predicate: (a: A) => boolean): FilteredValidator<A> {
-  return new FilteredValidator(validator, predicate)
 }
 
 //--------------------------------------
@@ -205,7 +190,7 @@ export class TupleValidator extends Validator<any> {
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     if (!Array.isArray(v)) return typeFailure(v, c, 'Tuple')
-    if (v.length !== this.validators.length) return failure(c, `Expected a Tuple${this.validators.length} but got a Tuple${v.length}`)
+    if (v.length !== this.validators.length) return failure(c, `Expected Tuple${this.validators.length}, got Tuple${v.length}`)
 
     const validatedArray: any[] = []
     const errors: ValidationError[] = []
@@ -338,7 +323,7 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
       }
       else {
         const error = domainValidation.get()
-        pushAll(errors, error.map(e => ({ context, message: `Error validating the key. ${e.message}` })))
+        pushAll(errors, error.map(e => ({ context, message: `key error: ${e.message}` })))
       }
 
       if (codomainValidation.isOk()) {
@@ -346,7 +331,7 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
       }
       else {
         const error = codomainValidation.get()
-        pushAll(errors, error.map(e => ({ context, message: `Error validating the value. ${e.message}` })))
+        pushAll(errors, error.map(e => ({ context, message: `value error: ${e.message}` })))
       }
     }
     return errors.length ? Err(errors) : Ok(validatedDict)
@@ -372,7 +357,7 @@ class LiteralValidator<V extends Literal> extends Validator<V> {
   validate(v: Value, _config: Configuration = defaultConfig, c: Context = rootContext) {
     return v === this.value
       ? success(v as V)
-      : failure(c, `Expected literal value ${this.value} but found ${pretty(v)}`)
+      : failure(c, `Expected literal ${this.value} but got ${pretty(v)}`)
   }
 }
 
@@ -537,21 +522,6 @@ export function recursion<T>(definition: (self: Validator<T>) => Any): Validator
 }
 
 //--------------------------------------
-//  isoDate
-//--------------------------------------
-
-export class IsoDateValidator extends Validator<Date> {
-
-  validate(v: Value, _config: Configuration = defaultConfig, c: Context = rootContext) {
-    if (typeof v !== 'string') return typeFailure(v, c, 'string')
-    const date = new Date(v)
-    return isNaN(date.getTime())
-      ? failure(c, `Expected an ISO date but got: ${pretty(v)}`)
-      : success(date)
-  }
-}
-
-//--------------------------------------
 //  util
 //--------------------------------------
 
@@ -571,15 +541,21 @@ export function errorDebugString(errors: ValidationError[]) {
 //  Export aliases and singletons
 //--------------------------------------
 
-const nullValidation = new NullValidator()
-const undefinedValidation = new UndefinedValidator()
+const nullValidator = new NullValidator()
+const undefinedValidator = new UndefinedValidator()
 
 export {
-  nullValidation as null,
-  undefinedValidation as undefined
+  nullValidator as null,
+  undefinedValidator as undefined
 }
 
 export const string = new StringValidator()
 export const number = new NumberValidator()
 export const boolean = new BooleanValidator()
-export const isoDate = new IsoDateValidator()
+
+export const isoDate = string.flatMap(str => {
+  const date = new Date(str)
+  return isNaN(date.getTime())
+    ? Err(`Expected an ISO date but got: ${pretty(str)}`)
+    : Ok(date)
+});

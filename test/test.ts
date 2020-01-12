@@ -1,7 +1,7 @@
 import * as v from '..'
 import * as expect from 'expect'
 import 'space-lift/commonjs/all'
-import { Set } from 'space-lift'
+import { Set, Ok, Err } from 'space-lift'
 
 
 const showErrorMessages = true
@@ -39,6 +39,33 @@ describe('validation', () => {
 
     type Number = typeof validator.T
     const num: Number = 33
+  })
+
+  it('can validate a value and further flatMap it', () => {
+    const validator = v.number.flatMap(x => Ok(String(x * 2)))
+
+    type StringFromNumber = typeof validator.T
+    const str: StringFromNumber = 'ok'
+
+    expect(validator.validate(10).get()).toBe('20')
+
+    const validator2 = v.number.flatMap(x => x < 1000 ? Err('hell no') : Ok(x))
+
+    type Number = typeof validator2.T
+    const num: Number = 33
+
+    const result2 = validator2.validate(10)
+    expect(!result2.isOk() && result2.get()[0].message).toBe('hell no')
+
+    const validator3 = v.number.flatMap(x => x > 10 ? Ok(String(x).split('')) : Err('aww'))
+
+    type StrArray = typeof validator3.T
+    const strArray: StrArray = ['1']
+
+    expect(validator3.validate(20).get()).toEqual(['2', '0'])
+    const result3 = validator3.validate(5);
+    expect(!result3.isOk() && result3.get()[0].message).toBe('aww');
+    printErrorMessage(result3);
   })
 
   it('can validate a filtered value', () => {

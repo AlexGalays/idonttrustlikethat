@@ -1,6 +1,6 @@
 {
   "name": "validation.ts",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "Validation for TypeScript",
   "license": "MIT",
   "main": "commonjs/validation.js",
@@ -16,7 +16,7 @@
     "cross-env": "5.2.0",
     "expect": "1.8.0",
     "mocha": "2.2.5",
-    "typescript": "3.1.1"
+    "typescript": "3.7.4"
   },
 
   "scripts": {

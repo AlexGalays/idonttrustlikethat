@@ -136,12 +136,15 @@ keyValidator.validate('bb') // Ok<'aa' | 'bb' | 'cc'> = Ok('bb')
 ```
 
 
-## map, filter
+## map, filter, flatMap
 
 ```ts
-import { map, filter, string } from 'validation.ts'
+import { string, Ok } from 'validation.ts'
 
-const validator = string.filter(str => str.length > 3).map(str => `${str}...`)
+const validator = string
+  .filter(str => str.length > 3)
+  .map(str => `${str}...`)
+  .flatMap(str => Ok(str.toLowerCase()))
 ```
 
 ## recursion
