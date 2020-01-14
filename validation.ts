@@ -249,7 +249,7 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
     super()
   }
 
-  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
+  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext): Validation<ObjectOf<P>> {
     if (v == null || typeof v !== 'object') return typeFailure(v, c, 'object')
 
     const validatedObject: any = {}
@@ -276,7 +276,7 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
   }
 }
 
-export function object<P extends Props>(props: P): Validator<ObjectOf<P>> & { props: P } {
+export function object<P extends Props>(props: P) {
   return new ObjectValidator(props)
 }
 
