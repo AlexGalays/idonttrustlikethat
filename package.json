@@ -1,6 +1,6 @@
 {
   "name": "validation.ts",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "description": "Validation for TypeScript",
   "license": "MIT",
   "main": "commonjs/validation.js",
