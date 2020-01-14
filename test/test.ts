@@ -155,6 +155,19 @@ describe('validation', () => {
     expect(notOkValidation.isOk()).toBe(false)
   })
 
+  it('can expose object props', () => {
+    const obj = {
+      id: v.number,
+      name: v.string,
+      friends: v.array(v.object({
+        name: v.string
+      }))
+    }
+    const person = v.object(obj)
+
+    expect(person.props).toBe(obj)
+  })
+
   it('can validate a dictionary', () => {
     const strNumMap = v.dictionary(v.string, v.number)
 
@@ -425,7 +438,7 @@ describe('validation', () => {
     const okSnakeCased = burger.validate({
       id: 123,
       'meat_cooking': 'rare',
-      'awesome_sides_nom_nom': [ 'loaded fries', 'barbecue sauce' ],
+      'awesome_sides_nom_nom': ['loaded fries', 'barbecue sauce'],
       options: {
         'double_bacon': true
       }
@@ -434,7 +447,7 @@ describe('validation', () => {
     const expected = {
       id: 123,
       meatCooking: 'rare',
-      awesomeSidesNomNom: [ 'loaded fries', 'barbecue sauce' ],
+      awesomeSidesNomNom: ['loaded fries', 'barbecue sauce'],
       options: {
         doubleBacon: true
       }
@@ -457,14 +470,14 @@ describe('validation', () => {
     const fieldInError = burger.validate({
       id: 123,
       'meat_cooking': 42,
-      'awesome_sides': [ 'loaded fries', 'barbecue sauce' ]
+      'awesome_sides': ['loaded fries', 'barbecue sauce']
     }, { transformObjectKeys: v.snakeCaseTransformation })
 
     expect(fieldInError.isOk()).toBe(false)
 
     printErrorMessage(fieldInError)
 
-    if(!fieldInError.isOk()) {
+    if (!fieldInError.isOk()) {
       const { context } = fieldInError.get()[0]
       expect(context).toEqual('root / meat_cooking')
     }
@@ -481,7 +494,7 @@ describe('validation', () => {
     const errorCamelCased = burger.validate({
       id: 456,
       meatCooking: 'blue',
-      awesomeSides: [ 'potatoes', 'ketchup' ]
+      awesomeSides: ['potatoes', 'ketchup']
     }, { transformObjectKeys: v.snakeCaseTransformation })
 
     expect(errorCamelCased.isOk()).toBe(false)

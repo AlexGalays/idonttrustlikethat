@@ -162,7 +162,7 @@ export class ArrayValidator<A> extends Validator<A[]> {
     const errors: ValidationError[] = []
 
     for (let i = 0; i < v.length; i++) {
-      const item  = v[i]
+      const item = v[i]
       const validation = this.validator.validate(item, config, getContext(String(i), c))
 
       if (validation.isOk()) {
@@ -196,7 +196,7 @@ export class TupleValidator extends Validator<any> {
     const errors: ValidationError[] = []
 
     for (let i = 0; i < v.length; i++) {
-      const item  = v[i]
+      const item = v[i]
       const validation = this.validators[i].validate(item, config, getContext(String(i), c))
 
       if (validation.isOk()) {
@@ -240,12 +240,14 @@ type Unpack<P extends Props> = { [K in keyof P]: P[K]['T'] }
 type OptionalKeys<T> = { [K in keyof T]: undefined extends T[K] ? K : never }[keyof T]
 type MandatoryKeys<T> = { [K in keyof T]: undefined extends T[K] ? never : K }[keyof T]
 
-export type ObjectOf<P extends Props> = 
+export type ObjectOf<P extends Props> =
   { [K in MandatoryKeys<Unpack<P>>]: Unpack<P>[K] } &
   { [K in OptionalKeys<Unpack<P>>]?: Unpack<P>[K] }
 
 export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
-  constructor(private props: P) { super() }
+  constructor(public props: P) {
+    super()
+  }
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     if (v == null || typeof v !== 'object') return typeFailure(v, c, 'object')
@@ -274,7 +276,7 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
   }
 }
 
-export function object<P extends Props>(props: P): Validator<ObjectOf<P>> {
+export function object<P extends Props>(props: P): Validator<ObjectOf<P>> & { props: P } {
   return new ObjectValidator(props)
 }
 
@@ -377,7 +379,7 @@ class IntersectionValidator<A> extends Validator<A> {
 
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, config, c)
-      
+
       if (validation.isOk()) {
         result = { ...result, ...validation.get() }
       }
@@ -500,7 +502,7 @@ export class OptionValidator<V> extends Validator<Option<V>> {
   constructor(private validator: Validator<V>) { super() }
 
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
-    if (v === undefined || v === null) return success(None)
+    if (v === undefined || v === null) return success(None)
     return this.validator.validate(v, config, c).map(Some)
   }
 }
