@@ -482,9 +482,9 @@ export function optional<V>(validator: Validator<V>) {
 
 export function recursion<T>(definition: (self: Validator<T>) => Any): Validator<T> {
   const Self = {
-    ...validatorMethods,
     validate: (v: Value, config: Configuration = defaultConfig, c: Context = rootContext) =>
-      Result.validate(v, config, c)
+      Result.validate(v, config, c),
+    ...validatorMethods
   } as Validator<T>
   const Result: any = definition(Self)
   return Result
