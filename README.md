@@ -6,22 +6,24 @@ This module helps validating incoming JSON, url params, etc in a type safe manne
 
 ## validate
 
-Every validator has a `validate` function which returns a [Result](https://github.com/AlexGalays/spacelift#api.result)  
+Every validator has a `validate` function which returns a Result (either a {type: 'ok', value} or a {type: 'error', errors})
 
 A validated value can be transformed at any point during the validation process (e.g. `isoDate`).  
 Errors are accumulated.  
 
 ```ts
-import { errorDebugString } from 'validation.ts'
+import { errorDebugString, isOk } from 'validation.ts'
 
 const myValidator = ...
 
 const result = myValidator.validate(myJson)
 
-result.fold(
-  errors => console.error(errorDebugString(errors)),
-  validatedJson => console.log(validatedJson)
-)
+if (isOk(result)) {
+  console.log(result.value)
+}
+else {
+  console.error(errorDebugString(result.errors))
+}
 ```
 
 In case of errors, The `Result` contains an Array of `{ message: string, context: string }` where `message` is a debug error message for developers and `context` is the path where the error occured (e.g `root / data / 0 / name`)
@@ -103,12 +105,6 @@ const person = object({
 
 Note: For bigger unions of strings, consider using the `keyof` validator instead.
 
-
-## option
-
-Whereas `optional` returns an `T | undefined`, `option` return an `Option<T>`
-
-
 ## dictionary
 
 A dictionary is an object where all keys and all values share a common type.
@@ -165,6 +161,9 @@ const category = recursion<Category>(self => object({
 
 Note: this can be used with any combination of validators except ones using `recursion`.
 
+Instead of using the derived type as your sole interface, use it to compare its compatibility with your
+handcrafted interfaces which will always be more readable in IDE's tooltips.
+
 ```ts
 import { object, string, number } from 'validation.ts'
 
@@ -173,13 +172,12 @@ const person = object({
   age: number
 })
 
-type Person = typeof person.T
-/*
+type PersonFromValidator = typeof person.T
+
 type Person = {
   name: string
   age: number
 }
-*/
 ```
 
 ## Configuration
