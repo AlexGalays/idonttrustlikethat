@@ -7,16 +7,12 @@
   "module": "es/validation.js",
   "typings": "commonjs/validation.d.ts",
 
-  "dependencies": {
-    "space-lift": ">=0.0.0"
-  },
-
   "devDependencies": {
     "chalk": "1.1.1",
     "cross-env": "5.2.0",
     "expect": "1.8.0",
     "mocha": "2.2.5",
-    "typescript": "3.7.4"
+    "typescript": "4.0.2"
   },
 
   "scripts": {

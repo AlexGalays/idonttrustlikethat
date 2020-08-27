@@ -1,19 +1,17 @@
 import * as v from '..'
+import {Ok, Err, isOk} from '..'
 import * as expect from 'expect'
-import 'space-lift/commonjs/all'
-import { Set, Ok, Err } from 'space-lift'
-
 
 const showErrorMessages = true
 
 describe('validation', () => {
 
   it('can validate that a value is a null', () => {
-    expect(v.null.validate(null).isOk()).toBe(true)
+    expect(isOk(v.null.validate(null))).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
 
-    expect(v.null.validate(undefined).isOk()).toBe(false)
-    expect(v.null.validate({}).isOk()).toBe(false)
+    expect(isOk(v.null.validate(undefined))).toBe(false)
+    expect(isOk(v.null.validate({}))).toBe(false)
     expect(v.is({}, v.null)).toBe(false)
 
     type Null = typeof v.null.T
@@ -21,11 +19,11 @@ describe('validation', () => {
   })
 
   it('can validate that a value is a string', () => {
-    expect(v.string.validate('hola').isOk()).toBe(true)
+    expect(isOk(v.string.validate('hola'))).toBe(true)
     expect(v.is('hola', v.string)).toBe(true)
 
-    expect(v.string.validate(undefined).isOk()).toBe(false)
-    expect(v.string.validate({}).isOk()).toBe(false)
+    expect(isOk(v.string.validate(undefined))).toBe(false)
+    expect(isOk(v.string.validate({}))).toBe(false)
     expect(v.is({}, v.string)).toBe(false)
 
     type String = typeof v.string.T
@@ -35,7 +33,7 @@ describe('validation', () => {
   it('can validate a value and map it', () => {
     const validator = v.number.map(x => x * 2)
 
-    expect(validator.validate(10).get()).toBe(20)
+    expect((validator.validate(10) as any).value).toBe(20)
 
     type Number = typeof validator.T
     const num: Number = 33
@@ -47,7 +45,7 @@ describe('validation', () => {
     type StringFromNumber = typeof validator.T
     const str: StringFromNumber = 'ok'
 
-    expect(validator.validate(10).get()).toBe('20')
+    expect((validator.validate(10) as Ok<unknown>).value).toBe('20')
 
     const validator2 = v.number.flatMap(x => x < 1000 ? Err('hell no') : Ok(x))
 
@@ -55,16 +53,16 @@ describe('validation', () => {
     const num: Number = 33
 
     const result2 = validator2.validate(10)
-    expect(!result2.isOk() && result2.get()[0].message).toBe('hell no')
+    expect(!isOk(result2) && result2.errors[0].message).toBe('hell no')
 
     const validator3 = v.number.flatMap(x => x > 10 ? Ok(String(x).split('')) : Err('aww'))
 
     type StrArray = typeof validator3.T
     const strArray: StrArray = ['1']
 
-    expect(validator3.validate(20).get()).toEqual(['2', '0'])
+    expect((validator3.validate(20) as Ok<unknown>).value).toEqual(['2', '0'])
     const result3 = validator3.validate(5);
-    expect(!result3.isOk() && result3.get()[0].message).toBe('aww');
+    expect(!isOk(result3) && result3.errors[0].message).toBe('aww');
     printErrorMessage(result3);
   })
 
@@ -73,8 +71,8 @@ describe('validation', () => {
 
     function isPositiveNumber(n: number) { return n >= 0 }
 
-    expect(positiveNumber.validate(10).get()).toBe(10)
-    expect(positiveNumber.validate(-1).isOk()).toBe(false)
+    expect((positiveNumber.validate(10) as Ok<unknown>).value).toBe(10)
+    expect(isOk(positiveNumber.validate(-1))).toBe(false)
 
     printErrorMessage(positiveNumber.validate(-1))
     printErrorMessage(v.number.filter(isPositiveNumber).validate(-1))
@@ -85,15 +83,18 @@ describe('validation', () => {
 
   it('can validate an array', () => {
     const numArray = [1, 2, 3]
-    expect(v.array(v.number).validate(numArray).get()).toEqual(numArray)
+    expect((v.array(v.number).validate(numArray) as Ok<unknown>).value).toEqual(numArray)
 
     const badNumArray = [1, 'oops', 'fuu']
     const badValidation = v.array(v.number).validate(badNumArray)
 
     printErrorMessage(badValidation)
 
-    expect(badValidation.isOk()).toBe(false)
-    expect(badValidation.get().length).toBe(2)
+    if (isOk(badValidation)) {
+      throw new Error('Should be an Error')
+    }
+
+    expect(badValidation.errors.length).toBe(2)
   })
 
   it('can validate an object', () => {
@@ -113,9 +114,9 @@ describe('validation', () => {
       someIrrelevantKey: true
     })
 
-    if (!okValidation.isOk()) throw new Error('Should be OK')
+    if (!isOk(okValidation))throw new Error('Should be OK')
 
-    expect(okValidation.get()).toEqual({
+    expect(okValidation.value).toEqual({
       id: 123,
       name: 'Alex',
       friends: [{ name: 'bob' }, { name: 'john' }]
@@ -128,8 +129,7 @@ describe('validation', () => {
       friends: [{ name: 'bob' }, { id: 'john' }]
     })
 
-    expect(notOkValidation.isOk()).toBe(false)
-    expect(!notOkValidation.isOk() && notOkValidation.get().length).toBe(2)
+    expect(!isOk(notOkValidation) && notOkValidation.errors.length).toBe(2)
     printErrorMessage(notOkValidation)
 
     type Person = typeof person.T
@@ -143,16 +143,16 @@ describe('validation', () => {
   })
 
   it('can validate that a value is a key of an object', () => {
-    const phoneMap = Set('mobile', 'work', 'landline').value()
+    const phoneMap = {'mobile': 1, 'work': 1, 'landline': 1}
     const phoneNumberNames = v.keyof(phoneMap)
 
     const okValidation = phoneNumberNames.validate('mobile')
 
-    expect(okValidation.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
 
     const notOkValidation = phoneNumberNames.validate('oops')
 
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can expose object props', () => {
@@ -175,27 +175,27 @@ describe('validation', () => {
       a: 1, b: 2, c: 3
     })
 
-    expect(okValidation.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
 
     const notOkValidation = strNumMap.validate({
       a: 1, b: 2, c: '3'
     })
 
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
 
 
     // domain = more precise than strings
-    const enumNumMap = v.dictionary(v.keyof(Set('a', 'b').value()), v.number)
+    const enumNumMap = v.dictionary(v.keyof({a: 1, b: 1}), v.number)
 
     const okValidation2 = enumNumMap.validate({ a: 1, b: 2 })
 
-    expect(okValidation2.isOk()).toBe(true)
+    expect(isOk(okValidation2)).toBe(true)
 
     const notOkValidation2 = enumNumMap.validate({
       a: 1, bb: 2, c: '3'
     })
 
-    expect(!notOkValidation2.isOk() && notOkValidation2.get().length).toBe(3)
+    expect(!isOk(notOkValidation2) && notOkValidation2.errors.length).toBe(3)
     printErrorMessage(notOkValidation2)
   })
 
@@ -210,21 +210,21 @@ describe('validation', () => {
     const okValidation = category.validate(
       { name: 'tools', categories: [{ name: 'piercing', categories: [] }] })
 
-    expect(okValidation.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
 
     const notOkValidation = category.validate(
       { name: 'tools', categories: [{ name2: 'piercing', categories: [] }] })
 
-    expect(!notOkValidation.isOk() && notOkValidation.get().length).toBe(1)
+    expect(!isOk(notOkValidation) && notOkValidation.errors.length).toBe(1)
     printErrorMessage(notOkValidation)
   })
 
   it('can validate an ISO date', () => {
     const okValidation = v.isoDate.validate('2017-06-23T12:14:38.298Z')
-    expect(okValidation.isOk() && okValidation.get().getFullYear() === 2017).toBe(true)
+    expect(isOk(okValidation) && okValidation.value.getFullYear() === 2017).toBe(true)
 
     const notOkValidation = v.isoDate.validate('hello')
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can validate an intersection of types', () => {
@@ -247,7 +247,7 @@ describe('validation', () => {
     }
 
     const notOkValidation = flyingSquirrel.validate(vulture)
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
 
     printErrorMessage(notOkValidation)
 
@@ -258,7 +258,7 @@ describe('validation', () => {
     }
 
     const okValidation = flyingSquirrel.validate(bob)
-    expect(okValidation.isOk() && okValidation.get()).toEqual({
+    expect(isOk(okValidation) && okValidation.value).toEqual({
       flyingDistance: 90,
       family: 'Sciuridae'
     })
@@ -276,14 +276,14 @@ describe('validation', () => {
     const okValidation = helloOrObj.validate('hello')
     const okValidation2 = helloOrObj.validate({ id: '123', name: 'hello' })
 
-    expect(okValidation.isOk()).toBe(true)
-    expect(okValidation2.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
+    expect(isOk(okValidation2)).toBe(true)
 
     const notOkValidation = helloOrObj.validate(111)
     const notOkValidation2 = helloOrObj.validate({ name2: 'hello' })
 
-    expect(notOkValidation.isOk()).toBe(false)
-    expect(notOkValidation2.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
+    expect(isOk(notOkValidation2)).toBe(false)
     printErrorMessage(notOkValidation)
     printErrorMessage(notOkValidation2)
 
@@ -297,15 +297,15 @@ describe('validation', () => {
     const okValidation4 = unionsOfLiterals.validate(33)
     const okValidation5 = unionsOfLiterals.validate(null)
 
-    expect(okValidation3.isOk()).toBe(true)
-    expect(okValidation4.isOk()).toBe(true)
-    expect(okValidation5.isOk()).toBe(true)
+    expect(isOk(okValidation3)).toBe(true)
+    expect(isOk(okValidation4)).toBe(true)
+    expect(isOk(okValidation5)).toBe(true)
 
     const notOkValidation3 = unionsOfLiterals.validate('hello2')
     const notOkValidation4 = unionsOfLiterals.validate(34)
 
-    expect(notOkValidation3.isOk()).toBe(false)
-    expect(notOkValidation4.isOk()).toBe(false)
+    expect(isOk(notOkValidation3)).toBe(false)
+    expect(isOk(notOkValidation4)).toBe(false)
     printErrorMessage(notOkValidation3)
   })
 
@@ -313,42 +313,26 @@ describe('validation', () => {
     const literalStr = v.literal('hello')
 
     const okValidation = literalStr.validate('hello')
-    expect(okValidation.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
 
     const notOkValidation = literalStr.validate('boo')
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can validate an optional value', () => {
     const optionalString = v.optional(v.string)
 
     const okValidation = optionalString.validate('hello')
-    expect(okValidation.isOk()).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
 
     const okValidation2 = optionalString.validate(undefined)
-    expect(okValidation2.isOk()).toBe(true)
+    expect(isOk(okValidation2)).toBe(true)
 
     const notOkValidation = optionalString.validate(null)
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
 
     const notOkValidation2 = optionalString.validate({})
-    expect(notOkValidation2.isOk()).toBe(false)
-  })
-
-  it('can validate an option', () => {
-    const stringOption = v.option(v.string)
-
-    const okValidation = stringOption.validate('hello')
-    expect(okValidation.isOk() && expect(okValidation.get().get()).toBe('hello'))
-
-    const okValidation2 = stringOption.validate(undefined)
-    expect(okValidation2.isOk() && expect(okValidation2.get().isDefined()).toBe(false))
-
-    const okValidation3 = stringOption.validate(null)
-    expect(okValidation3.isOk() && expect(okValidation3.get().isDefined()).toBe(false))
-
-    const notOkValidation = stringOption.validate({})
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation2)).toBe(false)
   })
 
   it('can validate a primitive and tag it', () => {
@@ -358,10 +342,10 @@ describe('validation', () => {
 
     const okValidation = userIdValidator.validate('abcd')
 
-    if (okValidation.isOk()) {
+    if (isOk(okValidation)) {
       // Check assignation/type
-      const idAsUserId: UserId = okValidation.get()
-      const idAsString: string = okValidation.get()
+      const idAsUserId: UserId = okValidation.value
+      const idAsString: string = okValidation.value
     }
     else {
       throw new Error()
@@ -369,7 +353,7 @@ describe('validation', () => {
 
     const notOkValidation = v.string.tagged<UserId>().validate({})
 
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can validate a combination of object and union values', () => {
@@ -382,9 +366,9 @@ describe('validation', () => {
     const okValidation2 = validator.validate({ id: '1', params: { id: '2' } })
     const notOkValidation = validator.validate({ id: '1', params: {} })
 
-    expect(okValidation.isOk()).toBe(true)
-    expect(okValidation2.isOk()).toBe(true)
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(okValidation)).toBe(true)
+    expect(isOk(okValidation2)).toBe(true)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can validate a combination of dictionary and union values', () => {
@@ -394,9 +378,9 @@ describe('validation', () => {
     const okValidation2 = validator.validate({ id: { id: '2' } })
     const notOkValidation = validator.validate({ id: {} })
 
-    expect(okValidation.isOk()).toBe(true)
-    expect(okValidation2.isOk()).toBe(true)
-    expect(notOkValidation.isOk()).toBe(false)
+    expect(isOk(okValidation)).toBe(true)
+    expect(isOk(okValidation2)).toBe(true)
+    expect(isOk(notOkValidation)).toBe(false)
   })
 
   it('can validate a tuple', () => {
@@ -411,12 +395,12 @@ describe('validation', () => {
     const notOkValidation2 = validator.validate([10, 10, null])
     const notOkValidation3 = validator.validate(33)
 
-    expect(tuple0.validate([]).isOk()).toBe(true)
-    expect(tuple1.validate([10]).isOk()).toBe(true)
-    expect(okValidation.isOk()).toBe(true)
-    expect(notOkValidation.isOk()).toBe(false)
-    expect(notOkValidation2.isOk()).toBe(false)
-    expect(notOkValidation3.isOk()).toBe(false)
+    expect(isOk(tuple0.validate([]))).toBe(true)
+    expect(isOk(tuple1.validate([10]))).toBe(true)
+    expect(isOk(okValidation)).toBe(true)
+    expect(isOk(notOkValidation)).toBe(false)
+    expect(isOk(notOkValidation2)).toBe(false)
+    expect(isOk(notOkValidation3)).toBe(false)
 
     printErrorMessage(notOkValidation)
     printErrorMessage(notOkValidation2)
@@ -425,7 +409,6 @@ describe('validation', () => {
 
 
   it('can transform snake cased inputs into camel case before validating', () => {
-
     const burger = v.object({
       id: v.number,
       meatCooking: v.string,
@@ -453,10 +436,10 @@ describe('validation', () => {
       }
     }
 
-    if (!okSnakeCased.isOk())
+    if (!isOk(okSnakeCased))
       throw new Error('Should be OK')
 
-    expect(okSnakeCased.get()).toEqual(expected)
+    expect(okSnakeCased.value).toEqual(expected)
   })
 
   it('reports transformed key names to the user in case of error', () => {
@@ -473,12 +456,12 @@ describe('validation', () => {
       'awesome_sides': ['loaded fries', 'barbecue sauce']
     }, { transformObjectKeys: v.snakeCaseTransformation })
 
-    expect(fieldInError.isOk()).toBe(false)
+    expect(isOk(fieldInError)).toBe(false)
 
     printErrorMessage(fieldInError)
 
-    if (!fieldInError.isOk()) {
-      const { context } = fieldInError.get()[0]
+    if (!isOk(fieldInError)) {
+      const { context } = fieldInError.errors[0]
       expect(context).toEqual('root / meat_cooking')
     }
   })
@@ -497,8 +480,7 @@ describe('validation', () => {
       awesomeSides: ['potatoes', 'ketchup']
     }, { transformObjectKeys: v.snakeCaseTransformation })
 
-    expect(errorCamelCased.isOk()).toBe(false)
-
+    expect(isOk(errorCamelCased)).toBe(false)
   })
 
   it('default to international locale conversion and pass the turkish test', () => {
@@ -511,8 +493,7 @@ describe('validation', () => {
       'burger_id': 456,
     }, { transformObjectKeys: v.snakeCaseTransformation })
 
-    expect(expected.isOk()).toBe(true)
-    expect(expected.get()).toEqual({ burgerId: 456 })
+    expect(isOk(expected) && expected.value).toEqual({ burgerId: 456 })
   })
 
   it('should allow missing keys for optional object keys when using the generated type', () => {
@@ -535,6 +516,6 @@ describe('validation', () => {
 function printErrorMessage(validation: v.Validation<any>) {
   if (!showErrorMessages) return
 
-  if (!validation.isOk())
-    console.log(v.errorDebugString(validation.get()))
+  if (!isOk(validation))
+    console.log(v.errorDebugString(validation.errors))
 }

@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "es5",
     "lib": [ "es5", "es6", "es2015.core", "dom"],
-    "strict": true
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "pretty": true
   },
   "compileOnSave": false,
   "filesGlob": ["validation.ts", "test/**/*.ts"]

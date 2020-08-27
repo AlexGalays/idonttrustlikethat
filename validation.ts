@@ -1,6 +1,3 @@
-import { Result, Ok, Err, Option, None, Some } from 'space-lift'
-
-
 //--------------------------------------
 //  Setup
 //--------------------------------------
@@ -15,11 +12,11 @@ export abstract class Validator<T> {
   }
 
   filter(fn: (value: T) => boolean): Validator<T> {
-    return this.flatMap(v => fn(v) ? Ok(v) : Err(`The value ${pretty(v)} failed a predicate"`))
+    return this.flatMap(v => fn(v) ? Ok(v) : Err(`filter error: ${pretty(v)}"`))
   }
 
   flatMap<B>(fn: (value: T) => Result<string, B>): Validator<B> {
-    return this.transform(r => r.isOk() ? fn(r.get()) : (r as Err<ValidationError[], never>))
+    return this.transform(r => isOk(r) ? fn(r.value) : r)
   }
 
   transform<B>(fn: (result: Validation<T>) => Result<string | ValidationError[], B>): Validator<B> {
@@ -31,6 +28,22 @@ export abstract class Validator<T> {
   tagged<TAG>(): Validator<TAG> {
     return this as {} as Validator<TAG>
   }
+}
+
+export type Ok<VALUE> = {type: 'ok', value: VALUE}
+export type Err<ERROR> = {type: 'error', errors: ERROR}
+export type Result<ERROR, VALUE> = Err<ERROR> | Ok<VALUE> 
+
+export function Ok<VALUE>(value: VALUE) {
+  return {type: 'ok', value} as const
+}
+
+export function Err<ERROR>(errors: ERROR) {
+  return {type: 'error', errors} as const
+}
+
+export function isOk<VALUE>(result: Result<unknown, VALUE>): result is Ok<VALUE> {
+  return result.type === 'ok'
 }
 
 export type Any = Validator<Value>
@@ -87,7 +100,7 @@ export const snakeCaseTransformation = (key: string): string =>
     .toLowerCase()
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
-  return validator.validate(value).isOk()
+  return isOk(validator.validate(value))
 }
 
 //--------------------------------------
@@ -136,10 +149,10 @@ export class TransformValidator<A, B> extends Validator<B> {
   validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
     const validated = this.validator.validate(v, config, c)
     const transformed = this.f(validated)
-    if (transformed.isOk())
-      return success(transformed.get())
+    if (isOk(transformed))
+      return success(transformed.value)
 
-    const error = transformed.get();
+    const error = transformed.errors
 
     if (typeof error === 'string')
       return failure(c, error);
@@ -165,11 +178,11 @@ export class ArrayValidator<A> extends Validator<A[]> {
       const item = v[i]
       const validation = this.validator.validate(item, config, getContext(String(i), c))
 
-      if (validation.isOk()) {
-        validatedArray.push(validation.get())
+      if (isOk(validation)) {
+        validatedArray.push(validation.value)
       }
       else {
-        pushAll(errors, validation.get())
+        pushAll(errors, validation.errors)
       }
     }
 
@@ -199,11 +212,11 @@ export class TupleValidator extends Validator<any> {
       const item = v[i]
       const validation = this.validators[i].validate(item, config, getContext(String(i), c))
 
-      if (validation.isOk()) {
-        validatedArray.push(validation.get())
+      if (isOk(validation)) {
+        validatedArray.push(validation.value)
       }
       else {
-        pushAll(errors, validation.get())
+        pushAll(errors, validation.errors)
       }
     }
 
@@ -264,12 +277,12 @@ export class ObjectValidator<P extends Props> extends Validator<ObjectOf<P>> {
       const validator = this.props[key]
       const validation = validator.validate(value, config, getContext(transformedKey, c))
 
-      if (validation.isOk()) {
-        if (validation.get() !== undefined)
-          validatedObject[key] = validation.get()
+      if (isOk(validation)) {
+        if (validation.value !== undefined)
+          validatedObject[key] = validation.value
       }
       else {
-        pushAll(errors, validation.get())
+        pushAll(errors, validation.errors)
       }
     }
     return errors.length ? Err(errors) : Ok(validatedObject)
@@ -320,19 +333,19 @@ export class DictionaryValidator<K extends string, V> extends Validator<Record<K
       const domainValidation = this.domain.validate(key, config, context)
       const codomainValidation = this.codomain.validate(value, config, context)
 
-      if (domainValidation.isOk()) {
-        key = domainValidation.get()
+      if (isOk(domainValidation)) {
+        key = domainValidation.value
       }
       else {
-        const error = domainValidation.get()
+        const error = domainValidation.errors
         pushAll(errors, error.map(e => ({ context, message: `key error: ${e.message}` })))
       }
 
-      if (codomainValidation.isOk()) {
-        validatedDict[key] = codomainValidation.get()
+      if (isOk(codomainValidation)) {
+        validatedDict[key] = codomainValidation.value
       }
       else {
-        const error = codomainValidation.get()
+        const error = codomainValidation.errors
         pushAll(errors, error.map(e => ({ context, message: `value error: ${e.message}` })))
       }
     }
@@ -380,8 +393,8 @@ class IntersectionValidator<A> extends Validator<A> {
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, config, c)
 
-      if (validation.isOk()) {
-        result = { ...result, ...validation.get() }
+      if (isOk(validation)) {
+        result = { ...result, ...validation.value }
       }
       else {
         return validation
@@ -416,10 +429,10 @@ export class UnionValidator<A> extends Validator<A> {
 
     for (let i = 0; i < this.validators.length; i++) {
       const validation = this.validators[i].validate(v, config, c)
-      if (validation.isOk())
+      if (isOk(validation))
         return validation
       else
-        errors.push(validation.get())
+        errors.push(validation.errors)
     }
 
     const detailString = errors.map((es, index) =>
@@ -436,7 +449,7 @@ export class LiteralUnionValidator<A extends Literal> extends Validator<A> {
     for (let i = 0; i < this.values.length; i++) {
       const validator = literal(this.values[i])
       const validation = validator.validate(v, config, c)
-      if (validation.isOk()) return validation
+      if (isOk(validation)) return validation
     }
     return failure(c, `The value ${pretty(v)} is not part of the union`)
   }
@@ -492,23 +505,6 @@ export class OptionalValidator<V> extends Validator<V | undefined> {
 
 export function optional<V>(validator: Validator<V>): Validator<V | undefined> {
   return new OptionalValidator(validator)
-}
-
-//--------------------------------------
-//  option
-//--------------------------------------
-
-export class OptionValidator<V> extends Validator<Option<V>> {
-  constructor(private validator: Validator<V>) { super() }
-
-  validate(v: Value, config: Configuration = defaultConfig, c: Context = rootContext) {
-    if (v === undefined || v === null) return success(None)
-    return this.validator.validate(v, config, c).map(Some)
-  }
-}
-
-export function option<V>(validator: Validator<V>): Validator<Option<V>> {
-  return new OptionValidator(validator)
 }
 
 //--------------------------------------
