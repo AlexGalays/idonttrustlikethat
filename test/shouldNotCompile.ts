@@ -1,5 +1,4 @@
 import * as v from '../'
-import Set from 'space-lift/object/set'
 
 
 // type derivation to null but assigned to a number @shouldNotCompile
@@ -33,7 +32,7 @@ const e: typeof person.T = {
 }
 
 // Deriving from a keyof validation but then assigning to a wrong string @shouldNotCompile
-const keys = Set('bob', 'tonton').value()
+const keys = {bob: 1, tonton: 1}
 const keysValidator = v.keyof(keys)
 const f: typeof keysValidator.T = 'bob2'
 
