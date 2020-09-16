@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "lib": [ "es5", "es6", "es2015.core", "dom"],
+    "lib": [ "es5", "es6", "es2015.core", "dom", "ES2016", "ES2017"],
+    "target": "ES5",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
     "pretty": true
   },
   "compileOnSave": false,

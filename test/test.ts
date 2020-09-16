@@ -333,6 +333,10 @@ describe('validation', () => {
 
     const notOkValidation2 = optionalString.validate({})
     expect(isOk(notOkValidation2)).toBe(false)
+
+    // Also works with dot notation
+    const optionalString2 = v.string.optional()
+    expect(isOk(optionalString2.validate('hey'))).toBe(true)
   })
 
   it('can validate a primitive and tag it', () => {

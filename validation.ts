@@ -13,6 +13,7 @@ export interface Validator<T> {
   transform<B>(fn: (result: Validation<T>) => Result<string | ValidationError[], B>): Validator<B>
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
+  optional(): Validator<T | undefined>
 }
 
 const validatorMethods = {
@@ -51,6 +52,10 @@ const validatorMethods = {
 
   tagged<TAG>(): Validator<TAG> {
     return this as {} as Validator<TAG>
+  },
+
+  optional(): Validator<unknown> {
+    return optional(this as Validator<unknown>)
   }
 }
 
@@ -70,8 +75,8 @@ export function isOk<VALUE>(result: Result<unknown, VALUE>): result is Ok<VALUE>
   return result.type === 'ok'
 }
 
-export type Any = Validator<Value>
-export type TypeOf<V extends Any> = V['T']
+export type AnyValidator = Validator<Value>
+export type TypeOf<V extends AnyValidator> = V['T']
 
 export interface ValidationError {
   readonly message: string
@@ -240,7 +245,7 @@ export function tuple(...validators: any[]): any {
 //  object
 //--------------------------------------
 
-export type Props = Record<string, Any>
+type Props = Record<string, AnyValidator>
 
 // Unpack helps TS inference. It worked without it in TS 3.0 but no longer does in 3.1.
 type Unpack<P extends Props> = { [K in keyof P]: P[K]['T'] }
@@ -346,7 +351,7 @@ export function dictionary<K extends string, V>(
 //  literal
 //--------------------------------------
 
-export type Literal = string | number | boolean | null | undefined
+type Literal = string | number | boolean | null | undefined
 
 export function literal<V extends Literal>(value: V) {
   return {
@@ -480,7 +485,7 @@ export function optional<V>(validator: Validator<V>) {
 //  recursion
 //--------------------------------------
 
-export function recursion<T>(definition: (self: Validator<T>) => Any): Validator<T> {
+export function recursion<T>(definition: (self: Validator<T>) => AnyValidator): Validator<T> {
   const Self = {
     validate: (v: Value, config: Configuration = defaultConfig, c: Context = rootContext) =>
       Result.validate(v, config, c),
