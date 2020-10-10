@@ -1,5 +1,5 @@
 {
-  "name": "validation.ts",
+  "name": "idonttrustlikethat",
   "version": "0.0.30",
   "sideEffects": false,
   "description": "Validation for TypeScript",
@@ -7,15 +7,13 @@
   "main": "commonjs/validation.js",
   "module": "es/validation.js",
   "typings": "commonjs/validation.d.ts",
-
   "devDependencies": {
     "chalk": "1.1.1",
     "cross-env": "5.2.0",
     "expect": "1.8.0",
     "mocha": "2.2.5",
-    "typescript": "4.0.2"
+    "typescript": "4.0.3"
   },
-
   "scripts": {
     "build": "npm run build-es && npm run build-commonjs",
     "build-es": "tsc validation.ts --outDir es --strict --noUnusedParameters --declaration --lib dom,es5,es6 --module es6 --target es6 --moduleResolution node",
@@ -36,10 +34,10 @@
   ],
   "author": "AlexGalays",
   "homepage": "https://github.com/AlexGalays/validation.ts",
-
   "prettier": {
     "tabWidth": 2,
     "semi": false,
-    "singleQuote": true
+    "singleQuote": true,
+    "arrowParens": "avoid"
   }
 }
