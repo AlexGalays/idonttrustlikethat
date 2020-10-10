@@ -15,7 +15,7 @@ The focus of the lib is on small size and an easy API to add new validations.
 - [API](#api)
   - [validate](#validate)
   - [primitives](#primitives)
-  - [tagged string/number](#tagged-string/number)
+  - [tagged string/number](#tagged-stringnumber)
   - [literal](#literal)
   - [object](#object)
   - [array](#array)
@@ -23,9 +23,9 @@ The focus of the lib is on small size and an easy API to add new validations.
   - [union](#union)
   - [intersection](#intersection)
   - [keyof](#keyof)
-  - [dictionary](#dictionary)
   - [default](#default)
-  - [map, filter](#map,-filter)
+  - [dictionary](#dictionary)
+  - [map, filter](#map-filter)
   - [flatMap](#flatMap)
   - [transform](#transform)
   - [recursion](#recursion)
@@ -354,7 +354,7 @@ const validator = string.flatMap(str =>
 
 ### transform
 
-`transform` allows any validated value or error to be transformed into any other validated or error.
+`transform` allows any validated value or error to be transformed into any other validated value or error.
 
 ```ts
 import { string, Ok, Err } from 'idonttrustlikethat'
