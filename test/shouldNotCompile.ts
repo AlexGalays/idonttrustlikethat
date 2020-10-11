@@ -31,6 +31,9 @@ const e: typeof person.T = {
   friends: [{ name: 111 }],
 }
 
+// Creating an union with completely wrong members @shouldNotCompile
+v.union(new Date(), new Date())
+
 // Deriving from an union type and assigning to an unrelated type @shouldNotCompile
 const helloOrObj = v.union(v.string, v.object({ name: v.string }))
 type HelloOrObj = typeof helloOrObj.T

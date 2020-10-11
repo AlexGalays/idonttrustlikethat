@@ -220,105 +220,11 @@ export function array<A>(validator: Validator<A>) {
 //  tuple
 //--------------------------------------
 
-export function tuple<A = never>(): Validator<A[]>
-export function tuple<A>(a: Validator<A>): Validator<[A]>
-export function tuple<A, B>(a: Validator<A>, b: Validator<B>): Validator<[A, B]>
-export function tuple<A, B, C>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>
-): Validator<[A, B, C]>
-export function tuple<A, B, C, D>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>
-): Validator<[A, B, C, D]>
-export function tuple<A, B, C, D, E>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>
-): Validator<[A, B, C, D, E]>
-export function tuple<A, B, C, D, E, F>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>
-): Validator<[A, B, C, D, E, F]>
-export function tuple<A, B, C, D, E, F, G>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>
-): Validator<[A, B, C, D, E, F, G]>
-export function tuple<A, B, C, D, E, F, G, H>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>
-): Validator<[A, B, C, D, E, F, G, H]>
-export function tuple<A, B, C, D, E, F, G, H, I>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>
-): Validator<[A, B, C, D, E, F, G, H, I]>
-export function tuple<A, B, C, D, E, F, G, H, I, J>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>,
-  j: Validator<J>
-): Validator<[A, B, C, D, E, F, G, H, I, J]>
-export function tuple<A, B, C, D, E, F, G, H, I, J, K>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>,
-  j: Validator<J>,
-  k: Validator<K>
-): Validator<[A, B, C, D, E, F, G, H, I, J, K]>
-export function tuple<A, B, C, D, E, F, G, H, I, J, K, L>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>,
-  j: Validator<J>,
-  k: Validator<K>,
-  l: Validator<L>
-): Validator<[A, B, C, D, E, F, G, H, I, J, K, L]>
-
+export function tuple<VS extends AnyValidator[]>(
+  ...vs: VS
+): Validator<
+  { [NUM in keyof VS]: VS[NUM] extends AnyValidator ? VS[NUM]['T'] : never }
+>
 export function tuple(...validators: any[]): any {
   return {
     validate(
@@ -497,42 +403,15 @@ export function literal<V extends Literal>(value: V) {
 //  intersection
 //--------------------------------------
 
-export function intersection<A, B>(
-  a: Validator<A>,
-  b: Validator<B>
-): Validator<A & B>
-export function intersection<A, B, C>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>
-): Validator<A & B & C>
-export function intersection<A, B, C>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>
-): Validator<A & B & C>
-export function intersection<A, B, C, D>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>
-): Validator<A & B & C & D>
-export function intersection<A, B, C, D, E>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>
-): Validator<A & B & C & D & E>
-export function intersection<A, B, C, D, E, F>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>
-): Validator<A & B & C & D & E & F>
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I
+) => void
+  ? I
+  : never
 
+export function intersection<VS extends AnyValidator[]>(
+  ...vs: VS
+): Validator<UnionToIntersection<VS[number]['T']>>
 export function intersection(...validators: any[]): any {
   return {
     validate(
@@ -562,194 +441,10 @@ export function intersection(...validators: any[]): any {
 //  union
 //--------------------------------------
 
-export function union<A, B>(a: Validator<A>, b: Validator<B>): Validator<A | B>
-export function union<A extends Literal, B extends Literal>(
-  a: A,
-  b: B
-): Validator<A | B>
-
-export function union<A, B, C>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>
-): Validator<A | B | C>
-export function union<A extends Literal, B extends Literal, C extends Literal>(
-  a: A,
-  b: B,
-  c: C
-): Validator<A | B | C>
-
-export function union<A, B, C, D>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>
-): Validator<A | B | C | D>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal
->(a: A, b: B, c: C, d: D): Validator<A | B | C | D>
-
-export function union<A, B, C, D, E>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>
-): Validator<A | B | C | D | E>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal
->(a: A, b: B, c: C, d: D, e: E): Validator<A | B | C | D | E>
-
-export function union<A, B, C, D, E, F>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>
-): Validator<A | B | C | D | E | F>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal,
-  F extends Literal
->(a: A, b: B, c: C, d: D, e: E, f: F): Validator<A | B | C | D | E | F>
-
-export function union<A, B, C, D, E, F, G>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>
-): Validator<A | B | C | D | E | F | G>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal,
-  F extends Literal,
-  G extends Literal
->(
-  a: A,
-  b: B,
-  c: C,
-  d: D,
-  e: E,
-  f: F,
-  g: G
-): Validator<A | B | C | D | E | F | G>
-
-export function union<A, B, C, D, E, F, G, H>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>
-): Validator<A | B | C | D | E | F | G | H>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal,
-  F extends Literal,
-  G extends Literal,
-  H extends Literal
->(
-  a: A,
-  b: B,
-  c: C,
-  d: D,
-  e: E,
-  f: F,
-  g: G,
-  h: H
-): Validator<A | B | C | D | E | F | G | H>
-
-export function union<A, B, C, D, E, F, G, H, I>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>
-): Validator<A | B | C | D | E | F | G | H | I>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal,
-  F extends Literal,
-  G extends Literal,
-  H extends Literal,
-  I extends Literal
->(
-  a: A,
-  b: B,
-  c: C,
-  d: D,
-  e: E,
-  f: F,
-  g: G,
-  h: H,
-  i: I
-): Validator<A | B | C | D | E | F | G | H | I>
-
-export function union<A, B, C, D, E, F, G, H, I, J>(
-  a: Validator<A>,
-  b: Validator<B>,
-  c: Validator<C>,
-  d: Validator<D>,
-  e: Validator<E>,
-  f: Validator<F>,
-  g: Validator<G>,
-  h: Validator<H>,
-  i: Validator<I>,
-  j: Validator<J>
-): Validator<A | B | C | D | E | F | G | H | I | J>
-export function union<
-  A extends Literal,
-  B extends Literal,
-  C extends Literal,
-  D extends Literal,
-  E extends Literal,
-  F extends Literal,
-  G extends Literal,
-  H extends Literal,
-  I extends Literal,
-  J extends Literal
->(
-  a: A,
-  b: B,
-  c: C,
-  d: D,
-  e: E,
-  f: F,
-  g: G,
-  h: H,
-  i: I,
-  j: J
-): Validator<A | B | C | D | E | F | G | H | I | J>
-
+export function union<VS extends AnyValidator[]>(
+  ...vs: VS
+): Validator<VS[number]['T']>
+export function union<LS extends Literal[]>(...ls: LS): Validator<LS[number]>
 export function union(...validators: any[]): any {
   const probe = validators[0]
 
