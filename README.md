@@ -1,8 +1,7 @@
 # idonttrustlikethat
+(Used to be named `validation.ts` but some people struggled to make this `.ts` node module work in TS and we needed a more serious name)  
 
-Validation for TypeScript
-
-This module helps validating incoming JSON, url params, localStorage values, server Environment objects, etc in a concise and type safe manner.  
+This module helps validating incoming JSON, Form values, url params, localStorage values, server Environment objects, etc in a concise and type safe manner.  
 The focus of the lib is on small size and an easy API to add new validations.
 
 - [How to](#how-to)
@@ -22,12 +21,10 @@ The focus of the lib is on small size and an easy API to add new validations.
   - [tuple](#tuple)
   - [union](#union)
   - [intersection](#intersection)
-  - [keyof](#keyof)
   - [default](#default)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
   - [flatMap](#flatMap)
-  - [transform](#transform)
   - [recursion](#recursion)
 
 ## How to
@@ -148,7 +145,6 @@ import {
   intersection,
   is,
   isoDate,
-  keyof,
   literal,
   null as vnull,
   number,
@@ -225,13 +221,41 @@ v.string.validate(12).ok // false
 ### tagged string/number
 
 Sometimes, a `string` or a `number` is not just any string or number but carries extra meaning, e.g: `email`, `uuid`, `userId`, `KiloGram`, etc.  
-Tagging such a primitive as it's being validated can help make the downstream code more robust.
+Tagging such a primitive as soon as it's being validated can help make the downstream code more robust and better documented.  
 
 ```ts
+import { string, object } from 'idonttrustlikethat'
+
 type UserId = string & { __tag: 'UserId' } // Note: You can use any naming convention for the tag.
 
-const userIdValidator = v.string.tagged<UserId>()
+const userId = string.tagged<UserId>()
+
+const user = object({
+  id: userId
+})
+
 ```
+
+If you don't use tagged types, it can lead to situations like:  
+
+```ts
+const user = object({
+  id: string,
+  companyId: string
+})
+
+const user = {
+  id: '12345678',
+  companyId: '7cd3821a-553f-4d26-84f9-88776005612b'
+}
+
+function fetchCompanyDetails(companyId: string) {}
+
+// Nothing prevents you from passing the wrong ID "type"
+fetchCompanyDetails(user.id)
+```
+
+Using tagged types fixes all these problems while also retaining that type's usefulness as a basic `string`/`number`.  
 
 ### literal
 
@@ -260,7 +284,36 @@ validator.validate({
 }).ok // true
 ```
 
-Note: For bigger unions of strings, consider using the `keyof` validator instead.
+Note that if you validate an input object with extra properties compared to what the validator know, these will be dropped from the output.  
+This helps keeping a clean object and let us avoid dangerous situations such as:  
+
+```ts
+import { string, object } from 'idonttrustlikethat'
+
+const configValidator = object({
+  clusterId: string,
+  version: string
+})
+
+const config = {
+  clusterId: '123',
+  version: 'v191',
+  extraStuffFromTheServer: 100,
+  _metadata: true
+}
+
+// Let's imagine what could happen if this kept all non declared properties in the output.
+const result = configValidator.validate(config)
+
+if (result.ok) {
+  // As far as typescript is concerned, all values are string in the validated object, which let us manipulate it as such, perhaps to pass it some generic utility:  
+  const configDictionary: Record<string, string> = result.value
+
+  // But it's a lie, some properties are still found in the object that aren't strings.
+  // This will throw an exception when the entire point of validating is to avoid that.
+  Object.values(configDictionary).forEach(str => str.padStart(2))
+}
+```
 
 ### array
 
@@ -292,6 +345,15 @@ const stringOrNumber = union(string, number)
 validator.validate(10).ok // true
 ```
 
+Unions of literal values do not have to use `literal()` but can be passed the values directly:  
+
+```ts
+import {union} from 'idonttrustlikethat'
+
+const bag = union(null, 'hello', true, 33)
+```
+
+
 ### intersection
 
 ```ts
@@ -302,17 +364,6 @@ const object2 = object({ age: number })
 const validator = intersection(object1, object2)
 
 validator.validate({ id: '123', age: 80 }).ok // true
-```
-
-### keyof
-
-```ts
-import { keyof } from 'idonttrustlikethat'
-
-const keys = { aa: 1, bb: 1, cc: 1 }
-const keyValidator = keyof(keys)
-
-keyValidator.validate('bb').ok // true
 ```
 
 ### default
@@ -365,18 +416,6 @@ import { string, Ok, Err } from 'idonttrustlikethat'
 
 const validator = string.flatMap(str =>
   str.length > 3 ? Ok(str) : Err(`No, that just won't do`)
-)
-```
-
-### transform
-
-`transform` allows any validated value or error to be transformed into any other validated value or error.
-
-```ts
-import { string, Ok, Err } from 'idonttrustlikethat'
-
-const validator = string.transform(result =>
-  result.ok ? Err('No way') : Ok('yes way')
 )
 ```
 

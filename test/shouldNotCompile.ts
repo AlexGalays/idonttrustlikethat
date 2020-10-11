@@ -31,11 +31,6 @@ const e: typeof person.T = {
   friends: [{ name: 111 }],
 }
 
-// Deriving from a keyof validation but then assigning to a wrong string @shouldNotCompile
-const keys = { bob: 1, tonton: 1 }
-const keysValidator = v.keyof(keys)
-const f: typeof keysValidator.T = 'bob2'
-
 // Deriving from an union type and assigning to an unrelated type @shouldNotCompile
 const helloOrObj = v.union(v.string, v.object({ name: v.string }))
 type HelloOrObj = typeof helloOrObj.T

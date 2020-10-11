@@ -10,9 +10,6 @@ export type Validator<T> = {
   map<B>(fn: (value: T) => B): Validator<B>
   filter(fn: (value: T) => boolean): Validator<T>
   flatMap<B>(fn: (value: T) => Result<string, B>): Validator<B>
-  transform<B>(
-    fn: (result: Validation<T>) => Result<string | ValidationError[], B>
-  ): Validator<B>
   withError(newError: string): Validator<T>
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
@@ -42,17 +39,15 @@ const validatorMethods = {
   },
 
   flatMap<B>(fn: (value: Value) => Result<string, B>): Validator<B> {
-    return this.transform(r => (r.ok ? fn(r.value) : r))
-  },
-
-  transform<B>(
-    fn: (result: Validation<Value>) => Result<string | ValidationError[], B>
-  ): Validator<B> {
-    return transform((this as unknown) as Validator<unknown>, fn)
+    return transform((this as unknown) as Validator<unknown>, r =>
+      r.ok ? fn(r.value) : r
+    )
   },
 
   withError(error: string) {
-    return this.transform(r => (r.ok ? r : Err(error)))
+    return transform((this as unknown) as Validator<unknown>, r =>
+      r.ok ? r : Err(error)
+    )
   },
 
   tagged<TAG>(): Validator<TAG> {
@@ -420,25 +415,6 @@ export function object<P extends Props>(props: P) {
     },
     ...validatorMethods,
   } as any) as Validator<ObjectOf<P>> & { props: P }
-}
-
-//--------------------------------------
-//  keyof
-//--------------------------------------
-
-export function keyof<KEYS extends object>(keys: KEYS) {
-  return ({
-    validate(
-      v: Value,
-      _config: Configuration = defaultConfig,
-      p: Path = rootPath
-    ): Validation<keyof KEYS> {
-      return keys.hasOwnProperty(v as string)
-        ? success(v as any)
-        : failure(p, `${pretty(v)} is not a key of ${pretty(keys)}`)
-    },
-    ...validatorMethods,
-  } as any) as Validator<keyof KEYS>
 }
 
 //--------------------------------------

@@ -149,19 +149,6 @@ describe('validation', () => {
     }
   })
 
-  it('can validate that a value is a key of an object', () => {
-    const phoneMap = { mobile: 1, work: 1, landline: 1 }
-    const phoneNumberNames = v.keyof(phoneMap)
-
-    const okValidation = phoneNumberNames.validate('mobile')
-
-    expect(okValidation.ok).toBe(true)
-
-    const notOkValidation = phoneNumberNames.validate('oops')
-
-    expect(notOkValidation.ok).toBe(false)
-  })
-
   it('can expose object props', () => {
     const obj = {
       id: v.number,
@@ -197,7 +184,7 @@ describe('validation', () => {
     expect(notOkValidation.ok).toBe(false)
 
     // domain = more precise than strings
-    const enumNumMap = v.dictionary(v.keyof({ a: 1, b: 1 }), v.number)
+    const enumNumMap = v.dictionary(v.union(...(['a', 'b'] as const)), v.number)
 
     const okValidation2 = enumNumMap.validate({ a: 1, b: 2 })
 
