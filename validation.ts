@@ -908,6 +908,19 @@ export const isoDate = string.flatMap(str => {
 })
 
 //--------------------------------------
+//  validateAs
+//--------------------------------------
+
+type NoInfer<T> = [T][T extends unknown ? 0 : never]
+
+export function validateAs<TYPE = 'validateAs requires an explicit type param'>(
+  validator: NoInfer<Validator<TYPE>>,
+  value: Value
+): Validation<TYPE> {
+  return validator.validate(value)
+}
+
+//--------------------------------------
 //  util
 //--------------------------------------
 

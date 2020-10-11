@@ -61,3 +61,15 @@ const validator = v.object({}).tagged<string>()
 
 // default() on a Validator that can't return null | undefined @shouldNotCompile
 v.object({}).default(3)
+
+// validateAs with no type param specified @shouldNotCompile
+v.validateAs(v.number, {})
+
+// validateAs with an incompatible type param @shouldNotCompile 1
+v.validateAs<string>(v.number, {})
+
+// validateAs with an incompatible type param @shouldNotCompile 2
+v.validateAs<{ id: string; prefs?: { lang: string } }>(
+  v.object({ id: v.string, prefs: v.object({}).optional() }),
+  {}
+)

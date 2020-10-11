@@ -566,6 +566,45 @@ describe('validation', () => {
         result2.errors[0].message === 'oh noes'
     ).toBe(true)
   })
+
+  it('can validateAs', () => {
+    const result1 = v.validateAs<string>(v.string, '123')
+
+    const person = v.object({
+      id: v.string,
+      age: v.number,
+      preferences: v.object({
+        langs: v.array(v.string),
+      }),
+    })
+
+    interface Person {
+      id: string
+      age: number
+      preferences: {
+        langs: string[]
+      }
+    }
+
+    const input = {
+      id: '123',
+      age: 50,
+      preferences: {
+        langs: ['fr', 'en', 'es'],
+      },
+    }
+
+    const result2 = v.validateAs<Person>(person, input)
+
+    // This should compile
+    v.validateAs<{ id: string; prefs?: {} }>(
+      v.object({
+        id: v.string,
+        prefs: v.object({ langs: v.array(v.string) }).optional(),
+      }),
+      {}
+    )
+  })
 })
 
 function printErrorMessage(validation: v.Validation<any>) {

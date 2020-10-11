@@ -72,8 +72,7 @@ bigArray.validate(['1', '2']).ok // false
 
 This can be used with any combination of validators except ones using `recursion`.
 
-Instead of using the derived type as your interface everywhere in the app, use it to compare its compatibility with your
-handcrafted interfaces which will be more readable in IDE's tooltips and keep compilation performances high.
+You can get the exact type of a validator's value easily:
 
 ```ts
 import { object, string, number } from 'idonttrustlikethat'
@@ -83,20 +82,37 @@ const person = object({
   age: number,
 })
 
-type PersonFromValidator = typeof person.T
+type Person = typeof person.T
+
+const person: Person = {
+  name: 'Jon',
+  age: 80
+}
+```
+
+However, this type is by necessity complex to evaluate, especially when objects/arrays become nested.  
+This might have a negative impact on compilation performances if these types end up being used everywhere in a codebase.  
+Also, it means the IDE type tooltips are not really human readable.  
+
+To have the best of both worlds, you can manually write your model interface and have the compiler verify it's compatible with the validator's generated type.
+
+This can easily be achieved by using `validateAs`:  
+
+```ts
+import { object, string, number, validateAs } from 'idonttrustlikethat'
+
+const person = object({
+  name: string,
+  age: number,
+})
 
 type Person = {
   name: string
   age: number
 }
 
-type Equals<A1, A2> = (<A>() => A extends A1 ? true : false) extends <
-  A
->() => A extends A2 ? true : false
-  ? true
-  : false
-
-const _typesAreEqual: Equals<Person, PersonFromValidator> = true
+const json = {}
+const result = validateAs<Person>(person, json)
 ```
 
 ### Customize error messages
