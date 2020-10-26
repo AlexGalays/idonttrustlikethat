@@ -26,7 +26,8 @@ type ValidatorWithDefault<T> = {
   default<D>(defaultValue: D): Validator<NonNullable<T> | D>
 }
 
-// Use object composition as transpiled classes are insanely byte intensive.
+// Use object composition as transpiled classes are insanely byte intensive, especially with super/extends being involved.
+// Move to classes if we stop supporting IE11.
 const validatorMethods = {
   map<B>(fn: (value: Value) => B): Validator<B> {
     return this.flatMap(v => Ok(fn(v)))
@@ -269,19 +270,24 @@ export function tuple(...validators: any[]): any {
 
 type Props = Record<string, AnyValidator>
 
-// Unpack helps TS inference. It worked without it in TS 3.0 but no longer does in 3.1.
+// Unpack helps TS inference.
 type Unpack<P extends Props> = { [K in keyof P]: P[K]['T'] }
+
 type OptionalKeys<T> = {
   [K in keyof T]: undefined extends T[K] ? K : never
 }[keyof T]
+
 type MandatoryKeys<T> = {
   [K in keyof T]: undefined extends T[K] ? never : K
 }[keyof T]
 
-export type ObjectOf<P extends Props> = {
-  [K in MandatoryKeys<Unpack<P>>]: Unpack<P>[K]
+export type ObjectOf<P extends Props> = ObjectOf2<Unpack<P>>
+
+// Intermediary mapped type so that we only Unpack once.
+type ObjectOf2<P extends Record<string, unknown>> = {
+  [K in MandatoryKeys<P>]: P[K]
 } &
-  { [K in OptionalKeys<Unpack<P>>]?: Unpack<P>[K] }
+  { [K in OptionalKeys<P>]?: P[K] }
 
 export function object<P extends Props>(props: P) {
   return ({
