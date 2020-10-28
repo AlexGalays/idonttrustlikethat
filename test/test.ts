@@ -69,6 +69,36 @@ describe('validation', () => {
     printErrorMessage(result3)
   })
 
+  it('can compose two validators returning a single string error', () => {
+    const stringToInt = v.string.flatMap(str => {
+      const result = Number.parseInt(str, 10)
+      if (Number.isFinite(result)) return Ok(result)
+      return Err('Expected an integer-like string, got: ' + str)
+    })
+
+    const timestampOk = v.number.flatMap(n => {
+      const date = new Date(n)
+      if (date.getTime() === NaN) return Err('Not a valid date')
+      return Ok(date)
+    })
+
+    const timestampNope = v.number.flatMap(n => {
+      return Err('Not a valid date')
+    })
+
+    const composedValidator1 = stringToInt.then(timestampOk)
+    const result1 = composedValidator1.validate('01')
+    expect(result1.ok && result1.value.getMilliseconds()).toBe(1)
+
+    const result2 = composedValidator1.validate(1)
+    expect(result2.ok).toBe(false)
+    printErrorMessage(result2)
+
+    const result3 = stringToInt.then(timestampNope).validate('01')
+    expect(!result3.ok && result3.errors[0].message).toBe('Not a valid date')
+    printErrorMessage(result3)
+  })
+
   it('can validate a filtered value', () => {
     const positiveNumber = v.number.filter(x => x >= 0)
 

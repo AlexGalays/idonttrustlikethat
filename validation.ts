@@ -10,6 +10,7 @@ export type Validator<T> = {
   map<B>(fn: (value: T) => B): Validator<B>
   filter(fn: (value: T) => boolean): Validator<T>
   flatMap<B>(fn: (value: T) => Result<string, B>): Validator<B>
+  then<B>(validator: Validator<B>): Validator<B>
   withError(newError: string): Validator<T>
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
@@ -37,6 +38,22 @@ const validatorMethods = {
     return this.flatMap(v =>
       fn(v) ? Ok(v) : Err(`filter error: ${pretty(v)}"`)
     ) as any
+  },
+
+  then<B>(validator: Validator<B>): Validator<B> {
+    const originalValidator = (this as unknown) as Validator<Value>
+    return ({
+      validate(
+        v: Value,
+        config: Configuration = defaultConfig,
+        p: Path = rootPath
+      ) {
+        const validated = originalValidator.validate(v, config, p)
+        if (!validated.ok) return validated
+        return validator.validate(validated.value, config, p)
+      },
+      ...validatorMethods,
+    } as any) as Validator<B>
   },
 
   flatMap<B>(fn: (value: Value) => Result<string, B>): Validator<B> {
@@ -135,50 +152,39 @@ export function is<T>(value: Value, validator: Validator<T>): value is T {
 //--------------------------------------
 
 const nullValidator = ({
-  validate: (
-    v: Value,
-    _config: Configuration = defaultConfig,
-    p: Path = rootPath
-  ) => (v === null ? success(v as null) : typeFailure(v, p, 'null')),
+  validate: (v: Value, _config: Configuration, p: Path = rootPath) =>
+    v === null ? success(v as null) : typeFailure(v, p, 'null'),
   ...validatorMethods,
 } as any) as Validator<null>
 
 const undefinedValidator = ({
-  validate: (
-    v: Value,
-    _config: Configuration = defaultConfig,
-    p: Path = rootPath
-  ) =>
+  validate: (v: Value, _config: Configuration, p: Path = rootPath) =>
     v === void 0 ? success(v as undefined) : typeFailure(v, p, 'undefined'),
   ...validatorMethods,
 } as any) as Validator<undefined>
 
 export const string = ({
-  validate: (
-    v: Value,
-    _config: Configuration = defaultConfig,
-    p: Path = rootPath
-  ) => (typeof v === 'string' ? success(v) : typeFailure(v, p, 'string')),
+  validate: (v: Value, _config: Configuration, p: Path = rootPath) =>
+    typeof v === 'string' ? success(v) : typeFailure(v, p, 'string'),
   ...validatorMethods,
 } as any) as Validator<string>
 
 export const number = ({
-  validate: (
-    v: Value,
-    _config: Configuration = defaultConfig,
-    p: Path = rootPath
-  ) => (typeof v === 'number' ? success(v) : typeFailure(v, p, 'number')),
+  validate: (v: Value, _config: Configuration, p: Path = rootPath) =>
+    typeof v === 'number' ? success(v) : typeFailure(v, p, 'number'),
   ...validatorMethods,
 } as any) as Validator<number>
 
 export const boolean = ({
-  validate: (
-    v: Value,
-    _config: Configuration = defaultConfig,
-    p: Path = rootPath
-  ) => (typeof v === 'boolean' ? success(v) : typeFailure(v, p, 'boolean')),
+  validate: (v: Value, _config: Configuration, p: Path = rootPath) =>
+    typeof v === 'boolean' ? success(v) : typeFailure(v, p, 'boolean'),
   ...validatorMethods,
 } as any) as Validator<boolean>
+
+export const unknown = ({
+  validate: (v: Value) => success(v),
+  ...validatorMethods,
+} as any) as Validator<unknown>
 
 //--------------------------------------
 //  array
@@ -392,11 +398,7 @@ type Literal = string | number | boolean | null | undefined
 
 export function literal<V extends Literal>(value: V) {
   return ({
-    validate(
-      v: Value,
-      _config: Configuration = defaultConfig,
-      p: Path = rootPath
-    ) {
+    validate(v: Value, _config: Configuration, p: Path = rootPath) {
       return v === value
         ? success(v as V)
         : failure(p, `Expected ${pretty(value)}, got ${pretty(v)}`)
