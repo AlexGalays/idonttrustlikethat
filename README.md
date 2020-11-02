@@ -24,6 +24,7 @@ The focus of the lib is on small size and an easy API to add new validations.
   - [default](#default)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
+  - [then](#then)
   - [flatMap](#flatMap)
   - [recursion](#recursion)
 
@@ -31,7 +32,7 @@ The focus of the lib is on small size and an easy API to add new validations.
 
 ### Create a new validation
 
-This library exposes a validator for all primitive and object types so you should usually start from one of these then compose it with extra validations.
+This library exposes a validator for all [primitive](#primitives) and object types so you should usually start from one of these then compose it with extra validations.
 
 Here's how `isoDate` is defined internally:
 
@@ -208,6 +209,7 @@ At [root / c] Error validating the value. Type error: expected number but got st
 ```ts
 import * as v from 'idonttrustlikethat'
 
+v.unknown
 v.string
 v.number
 v.boolean
@@ -220,7 +222,7 @@ v.string.validate(12).ok // false
 
 ### tagged string/number
 
-Sometimes, a `string` or a `number` is not just any string or number but carries extra meaning, e.g: `email`, `uuid`, `userId`, `KiloGram`, etc.  
+Sometimes, a `string` or a `number` is not just any string or number but carries extra meaning, e.g: `email`, `uuid`, `UserId`, `KiloGram`, etc.  
 Tagging such a primitive as soon as it's being validated can help make the downstream code more robust and better documented.  
 
 ```ts
@@ -417,6 +419,30 @@ import { string, Ok, Err } from 'idonttrustlikethat'
 const validator = string.flatMap(str =>
   str.length > 3 ? Ok(str) : Err(`No, that just won't do`)
 )
+```
+
+### then
+
+`then` allows the chaining of Validators. It can be used over `flatMap` if you already have the Validators ready to be reused.
+
+```ts
+// Validate that a string is a valid number (e.g, query string param)
+const stringToInt = v.string.flatMap(str => {
+  const result = Number.parseInt(str, 10)
+  if (Number.isFinite(result)) return Ok(result)
+  return Err('Expected an integer-like string, got: ' + str)
+})
+
+// unix time -> Date
+const timestamp = v.number.flatMap(n => {
+  const date = new Date(n)
+  if (date.getTime() === NaN) return Err('Not a valid date')
+  return Ok(date)
+})
+
+const timeStampFromQueryString = stringToInt.then(timestamp)
+
+timeStampFromQueryString.validate('1604341882') // {ok: true, value: Date(...)}
 ```
 
 ### recursion
