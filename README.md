@@ -436,7 +436,7 @@ const stringToInt = v.string.flatMap(str => {
 // unix time -> Date
 const timestamp = v.number.flatMap(n => {
   const date = new Date(n)
-  if (date.getTime() === NaN) return Err('Not a valid date')
+  if (isNaN(date.getTime())) return Err('Not a valid date')
   return Ok(date)
 })
 
