@@ -407,6 +407,20 @@ describe('validation', () => {
     expect(notOkValidation.ok).toBe(false)
   })
 
+  it('can validate and omit optional object values', () => {
+    const validator = v.object({
+      id: v.string,
+      query: v.string.optional(),
+      path: v.string.optional(),
+    })
+
+    const okValidation = validator.validate({ id: '1', query: 'q' })
+    expect(okValidation.ok && okValidation.value).toEqual({
+      id: '1',
+      query: 'q',
+    })
+  })
+
   it('can validate a combination of dictionary and union values', () => {
     const validator = v.dictionary(
       v.string,
@@ -622,9 +636,66 @@ describe('validation', () => {
       {}
     )
   })
+
+  it('can validateAs a readonly interface', () => {
+    type Person = Immutable<{
+      id: string
+      age: number
+      preferences: {
+        langs: string[]
+      }
+    }>
+
+    const person = v.object({
+      id: v.string,
+      age: v.number,
+      preferences: v.object({
+        langs: v.array(v.string),
+      }),
+    })
+
+    const input = {
+      id: '123',
+      age: 50,
+      preferences: {
+        langs: ['fr', 'en', 'es'],
+      },
+    }
+
+    const result = v.validateAs<Person>(person, input)
+
+    expect(result.ok && result.value.preferences.langs[0]).toBe('fr')
+  })
 })
 
 function printErrorMessage(validation: v.Validation<any>) {
   if (!showErrorMessages) return
   if (!validation.ok) console.log(v.errorDebugString(validation.errors))
 }
+
+function immutable<T>(obj: T): Immutable<T> {
+  return obj as any
+}
+
+type ImmutablePrimitive =
+  | undefined
+  | null
+  | boolean
+  | string
+  | number
+  | Function
+
+type Immutable<T> = T extends ImmutablePrimitive
+  ? T
+  : T extends Array<infer U>
+  ? ImmutableArray<U>
+  : T extends Map<infer K, infer V>
+  ? ImmutableMap<K, V>
+  : T extends Set<infer M>
+  ? ImmutableSet<M>
+  : ImmutableObject<T>
+
+type ImmutableArray<T> = ReadonlyArray<Immutable<T>>
+type ImmutableMap<K, V> = ReadonlyMap<Immutable<K>, Immutable<V>>
+type ImmutableSet<T> = ReadonlySet<Immutable<T>>
+type ImmutableObject<T> = { readonly [K in keyof T]: Immutable<T[K]> }
