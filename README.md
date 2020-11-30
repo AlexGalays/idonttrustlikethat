@@ -88,13 +88,7 @@ const person: Person = {
 }
 ```
 
-However, this type is by necessity complex to evaluate, especially when objects/arrays become nested.  
-This might have a negative impact on compilation performances if these types end up being used everywhere in a codebase.  
-Also, it means the IDE type tooltips are not really human readable.  
-
-To have the best of both worlds, you can manually write your model interface and have the compiler verify it's compatible with the validator's generated type.
-
-This can easily be achieved by using `validateAs`:  
+If you'd prefer to use your own handwritten type for some reason, you can use `validateAs` to move from the inferred type to your own type in a type-safe manner:  
 
 ```ts
 import { object, string, number, validateAs } from 'idonttrustlikethat'
