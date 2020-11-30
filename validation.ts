@@ -290,19 +290,23 @@ type MandatoryKeys<T> = {
 export type ObjectOf<P extends Props> = ObjectOf2<Unpack<P>>
 
 // Intermediary mapped type so that we only Unpack once.
-type ObjectOf2<P extends Record<string, unknown>> = {
-  [K in MandatoryKeys<P>]: P[K]
-} &
-  { [K in OptionalKeys<P>]?: P[K] }
+type ObjectOf2<P extends Record<string, unknown>> = Id<
+  {
+    [K in MandatoryKeys<P>]: P[K]
+  } &
+    { [K in OptionalKeys<P>]?: P[K] }
+>
 
-export function object<P extends Props>(props: P) {
-  return ({
+export function object<P extends Props>(
+  props: P
+): Validator<ObjectOf<P>> & { props: P } {
+  return {
     props,
     validate(
       v: Value,
       config: Configuration = defaultConfig,
       p: Path = rootPath
-    ): Validation<ObjectOf<P>> {
+    ) {
       if (v == null || typeof v !== 'object') return typeFailure(v, p, 'object')
 
       const validatedObject: any = {}
@@ -332,7 +336,7 @@ export function object<P extends Props>(props: P) {
       return errors.length ? Err(errors) : Ok(validatedObject)
     },
     ...validatorMethods,
-  } as any) as Validator<ObjectOf<P>> & { props: P }
+  } as any
 }
 
 //--------------------------------------
@@ -411,6 +415,9 @@ export function literal<V extends Literal>(value: V) {
 //  intersection
 //--------------------------------------
 
+// Hack to flatten an intersection into a single type.
+type Id<T> = {} & { [P in keyof T]: T[P] }
+
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   k: infer I
 ) => void
@@ -419,7 +426,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 
 export function intersection<VS extends AnyValidator[]>(
   ...vs: VS
-): Validator<UnionToIntersection<VS[number]['T']>>
+): Validator<Id<UnionToIntersection<VS[number]['T']>>>
 export function intersection(...validators: any[]): any {
   return {
     validate(

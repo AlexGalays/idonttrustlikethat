@@ -677,6 +677,60 @@ function immutable<T>(obj: T): Immutable<T> {
   return obj as any
 }
 
+// Manually test how a complex type tooltip looks like in our IDE
+
+type UserId = string & { __tag: 'UserIds' }
+
+const validator = v.object({
+  id: v.string.tagged<UserId>(),
+  address: v
+    .object({
+      street: v.string,
+      zipCode: v.string,
+    })
+    .map(address => ({ ...address, comment: 4312 })),
+  preferences: v.union(
+    v.object({ name: v.literal('name1'), data: v.string.optional() }),
+    v.object({ name: v.literal('name2'), data: v.number })
+  ),
+  friends: v.array(
+    v.object({
+      id: v.string.tagged<UserId>(),
+      name: v.string,
+    })
+  ),
+  dict: v.dictionary(v.string.tagged<UserId>(), v.number),
+  intersectionOfUnions: v.intersection(
+    v.union(
+      v.object({ prop1: v.object({ aa: v.string }) }),
+      v.object({ data1: v.string })
+    ),
+    v.union(
+      v.object({ prop2: v.object({ bb: v.string }) }),
+      v.object({ data2: v.number })
+    )
+  ),
+  unionOfIntersections: v.union(
+    v.intersection(
+      v.object({ name: v.literal('aa') }),
+      v.object({ data: v.number })
+    ),
+    v.intersection(
+      v.object({ name: v.literal('bb') }),
+      v.object({ data: v.string })
+    )
+  ),
+  tuple: v.tuple(v.string, v.number, v.object({ name: v.string })),
+})
+
+type ValidatorType = typeof validator.T
+type Dict = ValidatorType['dict']
+type IntersectionOfUnions = ValidatorType['intersectionOfUnions']
+type UnionOfIntersections = ValidatorType['unionOfIntersections']
+type Tuple = ValidatorType['tuple']
+
+// Helper types
+
 type ImmutablePrimitive =
   | undefined
   | null
