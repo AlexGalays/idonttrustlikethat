@@ -348,9 +348,9 @@ validator.validate({ id: '123', age: 80 }).ok // true
 
 `optional()` transforms a validator to allow `undefined` values.  
 
-`nullable()`, transforms a validator to allow `undefined` and `null` values, akin to the std lib `NonNullable` type.  
+`nullable()` transforms a validator to allow `undefined` and `null` values, akin to the std lib `NonNullable` type.  
 
-If you must validate a `T | null` that shouldn't be possibly `undefined`, you can use `union()`  
+If you must validate a `T | null` that shouldn't possibly be `undefined`, you can use `union()`  
 
 ```ts
 import { string } from 'idonttrustlikethat'
