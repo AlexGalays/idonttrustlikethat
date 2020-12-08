@@ -5,7 +5,7 @@
 export type Validator<T> = {
   readonly T: T // Phantom type
 
-  validate(value: Value, config?: Configuration, path?: Path): Validation<T>
+  validate(value: unknown, config?: Configuration, path?: Path): Validation<T>
 
   map<B>(fn: (value: T) => B): Validator<B>
   filter(fn: (value: T) => boolean): Validator<T>
@@ -14,16 +14,20 @@ export type Validator<T> = {
   withError(newError: string): Validator<T>
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
+
+  /**
+   * Returns a new validator where undefined is also a valid input.
+   */
   optional(): Validator<T | undefined>
-} & NullableValidator<T>
 
-type NullableValidator<T> = undefined extends T
-  ? ValidatorWithDefault<T>
-  : null extends T
-  ? ValidatorWithDefault<T>
-  : { default: never }
+  /**
+   * Returns a new validator where undefined and null are also valid inputs.
+   */
+  nullable(): Validator<T | undefined | null>
 
-type ValidatorWithDefault<T> = {
+  /**
+   * Fallbacks to a default value if the previous validator returned null or undefined.
+   */
   default<D>(defaultValue: D): Validator<NonNullable<T> | D>
 }
 
@@ -72,8 +76,12 @@ const validatorMethods = {
     return (this as {}) as Validator<TAG>
   },
 
+  nullable(): Validator<unknown> {
+    return union(this as any, nullValidator, undefinedValidator)
+  },
+
   optional(): Validator<unknown> {
-    return optional((this as unknown) as Validator<unknown>)
+    return union(this as any, undefinedValidator)
   },
 
   default(value: unknown) {
@@ -100,7 +108,7 @@ export interface ValidationError {
   readonly path: Path
 }
 
-type Value = Object | null | undefined
+type Value = unknown
 type Path = string & { __tag: 'path' }
 
 export type Configuration = {
@@ -117,13 +125,18 @@ function failure(path: Path, message: string): Validation<never> {
   return Err([{ path, message }])
 }
 
+function valueType(value: any) {
+  if (Array.isArray(value)) return 'array'
+  if (value === null) return 'null'
+  return typeof value
+}
+
+function typeFailureMessage(expectedType: string, value: any) {
+  return `Expected ${expectedType}, got ${valueType(value)}`
+}
+
 function typeFailure(value: any, path: Path, expectedType: string) {
-  const valueType = (() => {
-    if (Array.isArray(value)) return 'array'
-    if (value === null) return 'null'
-    return typeof value
-  })()
-  const message = `Expected ${expectedType}, got ${valueType}`
+  const message = typeFailureMessage(expectedType, value)
   return Err([{ path, message }])
 }
 
@@ -517,30 +530,16 @@ export function union(...validators: any[]): any {
 }
 
 //--------------------------------------
-//  optional
-//--------------------------------------
-
-function optional<V>(validator: Validator<V>) {
-  return ({
-    validate(
-      v: Value,
-      config: Configuration = defaultConfig,
-      p: Path = rootPath
-    ) {
-      if (v === undefined) return success(v as undefined)
-      return validator.validate(v, config, p)
-    },
-    ...validatorMethods,
-  } as any) as Validator<V | undefined>
-}
-
-//--------------------------------------
 //  transform
 //--------------------------------------
 
 function transform<V, B>(
   validator: Validator<V>,
-  fn: (result: Validation<Value>) => Result<string | ValidationError[], B>
+  fn: (
+    result: Validation<Value>,
+    value: Value,
+    p: Path
+  ) => Result<string | ValidationError[], B>
 ) {
   return ({
     validate(
@@ -549,7 +548,7 @@ function transform<V, B>(
       p: Path = rootPath
     ) {
       const validated = validator.validate(v, config, p)
-      const transformed = fn(validated)
+      const transformed = fn(validated, v, p)
 
       if (transformed.ok) return success(transformed.value)
 

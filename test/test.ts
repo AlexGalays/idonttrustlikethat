@@ -1,6 +1,7 @@
 import * as v from '..'
 import { Ok, Err } from '..'
 import * as expect from 'expect'
+import { union } from '../validation'
 
 const showErrorMessages = true
 
@@ -370,6 +371,8 @@ describe('validation', () => {
 
     const notOkValidation2 = optionalString.validate({})
     expect(notOkValidation2.ok).toBe(false)
+
+    printErrorMessage(notOkValidation2)
   })
 
   it('can validate a primitive and tag it', () => {
@@ -598,73 +601,42 @@ describe('validation', () => {
     ).toBe(true)
   })
 
-  it('can validateAs', () => {
-    const result1 = v.validateAs<string>(v.string, '123')
-
-    const person = v.object({
-      id: v.string,
-      age: v.number,
-      preferences: v.object({
-        langs: v.array(v.string),
-      }),
-    })
-
-    interface Person {
-      id: string
-      age: number
-      preferences: {
-        langs: string[]
-      }
+  it('can assign a custom nullable validator to a validator containing null', () => {
+    function nullable<T>(validator: v.Validator<T>): v.Validator<T | null> {
+      return union(v.null, validator)
     }
 
-    const input = {
-      id: '123',
-      age: 50,
-      preferences: {
-        langs: ['fr', 'en', 'es'],
-      },
-    }
-
-    const result2 = v.validateAs<Person>(person, input)
-
-    // This should compile
-    v.validateAs<{ id: string; prefs?: {} }>(
-      v.object({
-        id: v.string,
-        prefs: v.object({ langs: v.array(v.string) }).optional(),
-      }),
-      {}
+    const _validator: v.Validator<Object | null | undefined> = union(
+      v.null,
+      v.number
     )
+
+    const _validator2: v.Validator<null | number> = nullable(v.number)
   })
 
-  it('can validateAs a readonly interface', () => {
-    type Person = Immutable<{
-      id: string
-      age: number
-      preferences: {
-        langs: string[]
-      }
-    }>
+  it('can transform a validator into a nullable validator', () => {
+    const validator = v
+      .object({
+        a: v.number,
+        b: v.string,
+      })
+      .nullable()
 
-    const person = v.object({
-      id: v.string,
-      age: v.number,
-      preferences: v.object({
-        langs: v.array(v.string),
-      }),
-    })
+    const result1 = validator.validate(null)
+    const result2 = validator.validate(undefined)
+    const result3 = validator.validate({ a: 10, b: 'aa' })
+    const result4 = validator.validate('aa')
+    const result5 = validator.validate({ a: 10 })
 
-    const input = {
-      id: '123',
-      age: 50,
-      preferences: {
-        langs: ['fr', 'en', 'es'],
-      },
-    }
+    expect(result1.ok && result1.value).toEqual(null)
+    expect(result2.ok && result2.value).toEqual(undefined)
+    expect(result3.ok && result3.value).toEqual({ a: 10, b: 'aa' })
+    expect(!result4.ok)
+    expect(!result5.ok)
 
-    const result = v.validateAs<Person>(person, input)
-
-    expect(result.ok && result.value.preferences.langs[0]).toBe('fr')
+    printErrorMessage(result4)
+    console.log('\n\n')
+    printErrorMessage(result5)
   })
 })
 

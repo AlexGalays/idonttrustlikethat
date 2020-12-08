@@ -57,12 +57,6 @@ const bbb: OnlyAAA = 'bbb'
 // tagged() called on a non Primitive validator (string | number) @shouldNotCompile
 const validator = v.object({}).tagged<string>()
 
-// default() on a Validator that can't return null | undefined @shouldNotCompile
-v.object({}).default(3)
-
-// validateAs with no type param specified @shouldNotCompile
-v.validateAs(v.number, {})
-
 // validateAs with an incompatible type param @shouldNotCompile 1
 v.validateAs<string>(v.number, {})
 

@@ -4,7 +4,8 @@
     "target": "ES5",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "pretty": true
+    "pretty": true,
+    "noErrorTruncation": true
   },
   "compileOnSave": false,
   "filesGlob": ["validation.ts", "test/**/*.ts"]

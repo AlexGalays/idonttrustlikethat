@@ -21,6 +21,7 @@ The focus of the lib is on small size and an easy API to add new validations.
   - [tuple](#tuple)
   - [union](#union)
   - [intersection](#intersection)
+  - [optional, nullable](#optional-nullable)
   - [default](#default)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
@@ -86,25 +87,6 @@ const person: Person = {
   name: 'Jon',
   age: 80
 }
-```
-
-If you'd prefer to use your own handwritten type for some reason, you can use `validateAs` to move from the inferred type to your own type in a type-safe manner:  
-
-```ts
-import { object, string, number, validateAs } from 'idonttrustlikethat'
-
-const person = object({
-  name: string,
-  age: number,
-})
-
-type Person = {
-  name: string
-  age: number
-}
-
-const json = {}
-const result = validateAs<Person>(person, json)
 ```
 
 ### Customize error messages
@@ -362,9 +344,28 @@ const validator = intersection(object1, object2)
 validator.validate({ id: '123', age: 80 }).ok // true
 ```
 
+### optional, nullable
+
+`optional()` transforms a validator to allow `undefined` values.  
+
+`nullable()`, transforms a validator to allow `undefined` and `null` values, akin to the std lib `NonNullable` type.  
+
+If you must validate a `T | null` that shouldn't be possibly `undefined`, you can use `union()`  
+
+```ts
+import { string } from 'idonttrustlikethat'
+
+const validator = string.nullable()
+
+const result = validator.validate(undefined)
+
+result.ok && result.value // undefined
+```
+
+
 ### default
 
-default() only works with Validator that _can_ return a null or undefined value.
+Returns a default value if the validated value was either null or undefined.  
 
 ```ts
 import { string } from 'idonttrustlikethat'
