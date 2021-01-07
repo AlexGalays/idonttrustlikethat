@@ -1,7 +1,6 @@
 import * as v from '..'
 import { Ok, Err } from '..'
 import * as expect from 'expect'
-import { union } from '../validation'
 
 const showErrorMessages = true
 
@@ -347,6 +346,46 @@ describe('validation', () => {
     printErrorMessage(notOkValidation3)
   })
 
+  it('can validate a discriminated union of types', () => {
+    const validator = v.discriminatedUnion(
+      'type',
+      v.object({ type: v.literal('A'), name: v.string }),
+      v.object({ type: v.literal('B'), data: v.number })
+    )
+
+    const okValidation = validator.validate({
+      type: 'A',
+      name: 'Alfred',
+      _meta: 10,
+    })
+
+    const okValidation2 = validator.validate({ type: 'B', data: 10 })
+
+    const notOkValidation = validator.validate({ _type: 'A', name: 'name' })
+    const notOkValidation2 = validator.validate({ type: 'B', name: '10' })
+    const notOkValidation3 = validator.validate({ type: 'C', name: '10' })
+    const notOkValidation4 = validator.validate(null)
+
+    expect(okValidation.ok && okValidation.value).toEqual({
+      type: 'A',
+      name: 'Alfred',
+    })
+    expect(okValidation2.ok && okValidation2.value).toEqual({
+      type: 'B',
+      data: 10,
+    })
+
+    expect(notOkValidation.ok).toBe(false)
+    expect(notOkValidation2.ok).toBe(false)
+    expect(notOkValidation3.ok).toBe(false)
+    expect(notOkValidation4.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+    printErrorMessage(notOkValidation2)
+    printErrorMessage(notOkValidation3)
+    printErrorMessage(notOkValidation4)
+  })
+
   it('can validate a literal value', () => {
     const literalStr = v.literal('hello')
 
@@ -603,10 +642,10 @@ describe('validation', () => {
 
   it('can assign a custom nullable validator to a validator containing null', () => {
     function nullable<T>(validator: v.Validator<T>): v.Validator<T | null> {
-      return union(v.null, validator)
+      return v.union(v.null, validator)
     }
 
-    const _validator: v.Validator<Object | null | undefined> = union(
+    const _validator: v.Validator<Object | null | undefined> = v.union(
       v.null,
       v.number
     )

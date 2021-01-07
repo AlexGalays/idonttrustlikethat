@@ -40,12 +40,10 @@ type HelloOrObj = typeof helloOrObj.T
 const hello: HelloOrObj = {}
 
 // Deriving from an intersection type and assigning to an unrelated type @shouldNotCompile
-
 const fooAndBar = v.intersection(
   v.object({ foo: v.number }),
   v.object({ bar: v.string })
 )
-
 type FooAndBar = typeof fooAndBar.T
 const foo: FooAndBar = { foo: 10 }
 
@@ -64,4 +62,21 @@ v.validateAs<string>(v.number, {})
 v.validateAs<{ id: string; prefs?: { lang: string } }>(
   v.object({ id: v.string, prefs: v.object({}).optional() }),
   {}
+)
+
+// discriminatedUnion where the type key is not found in all the members @shouldNotCompile
+v.discriminatedUnion(
+  'type',
+  v.object({ type: v.literal('A') }),
+  v.object({ name: v.string })
+)
+
+// discriminatedUnion where the type key is not found in all the members (2) @shouldNotCompile
+v.discriminatedUnion('type', v.object({ type: v.literal('A') }), v.string)
+
+// discriminatedUnion where the type value is not a literal validator in all the members (3) @shouldNotCompile
+v.discriminatedUnion(
+  'type',
+  v.object({ type: v.literal('A') }),
+  v.object({ type: v.string })
 )

@@ -331,6 +331,24 @@ import {union} from 'idonttrustlikethat'
 const bag = union(null, 'hello', true, 33)
 ```
 
+### discriminatedUnion
+
+Although you could also use `union` for your discriminated unions, `discriminatedUnion` is faster and has better error messages for that special case. It will also catch common typos at the type level.  
+
+```ts
+import {discriminatedUnion, literal, string} from 'idonttrustlikethat'
+
+const userSending = object({
+  type: literal('sending')
+})
+
+const userEditing = object({
+  type: literal('editing'),
+  currentText: string
+})
+
+const userChatAction = discriminatedUnion('type', userSending, userEditing)
+```
 
 ### intersection
 

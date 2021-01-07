@@ -310,9 +310,9 @@ type ObjectOf2<P extends Record<string, unknown>> = Id<
     { [K in OptionalKeys<P>]?: P[K] }
 >
 
-export function object<P extends Props>(
-  props: P
-): Validator<ObjectOf<P>> & { props: P } {
+type ObjectValidator<P extends Props> = Validator<ObjectOf<P>> & { props: P }
+
+export function object<P extends Props>(props: P): ObjectValidator<P> {
   return {
     props,
     validate(
@@ -412,16 +412,18 @@ export function dictionary<K extends string, V>(
 //--------------------------------------
 
 type Literal = string | number | boolean | null | undefined
+type LiteralValidator<V extends Literal> = Validator<V> & { value: V }
 
 export function literal<V extends Literal>(value: V) {
   return ({
+    value,
     validate(v: Value, _config: Configuration, p: Path = rootPath) {
       return v === value
         ? success(v as V)
         : failure(p, `Expected ${pretty(value)}, got ${pretty(v)}`)
     },
     ...validatorMethods,
-  } as any) as Validator<V>
+  } as any) as LiteralValidator<V>
 }
 
 //--------------------------------------
@@ -527,6 +529,41 @@ export function union(...validators: any[]): any {
     },
     ...validatorMethods,
   }
+}
+
+//--------------------------------------
+//  discriminatedUnion
+//--------------------------------------
+
+export function discriminatedUnion<
+  TYPEKEY extends string,
+  VS extends ObjectValidator<{ [K in TYPEKEY]: LiteralValidator<any> }>[]
+>(typeKey: TYPEKEY, ...vs: VS): Validator<VS[number]['T']> {
+  const validatorByType = vs.reduce(
+    (map, validator) => map.set(validator.props[typeKey].value, validator),
+    new Map<Literal, VS[number]>()
+  )
+  return {
+    validate(
+      v: Value,
+      config: Configuration = defaultConfig,
+      p: Path = rootPath
+    ) {
+      if (v == null) return failure(p, `union member is nullish: ${v}`)
+
+      const typeValue = (v as any)[typeKey]
+      const validator = validatorByType.get(typeValue)
+
+      if (typeValue === undefined || !validator)
+        return failure(
+          p,
+          `union member ${typeKey}=${typeValue} is unknown. ${pretty(v)}`
+        )
+
+      return validator.validate(v, config, p)
+    },
+    ...validatorMethods,
+  } as any
 }
 
 //--------------------------------------
