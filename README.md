@@ -4,6 +4,8 @@
 This module helps validating incoming JSON, Form values, url params, localStorage values, server Environment objects, etc in a concise and type safe manner.  
 The focus of the lib is on small size and an easy API to add new validations.
 
+Note: This module uses very precise Typescript types. Thus, it is mandatory to at least have the following `tsconfig` / `tsc`'s compiler options flag: `strict`: `true`.
+
 - [How to](#how-to)
 
   - [Create a new validation](#create-a-new-validation)

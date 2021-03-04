@@ -1,6 +1,6 @@
 {
   "name": "idonttrustlikethat",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "sideEffects": false,
   "description": "Validation for TypeScript",
   "license": "MIT",
@@ -38,6 +38,7 @@
     "tabWidth": 2,
     "semi": false,
     "singleQuote": true,
-    "arrowParens": "avoid"
+    "arrowParens": "avoid",
+    "trailingComma": "none"
   }
 }

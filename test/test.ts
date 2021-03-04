@@ -140,16 +140,16 @@ describe('validation', () => {
       name: v.string,
       friends: v.array(
         v.object({
-          name: v.string,
+          name: v.string
         })
-      ),
+      )
     })
 
     const okValidation = person.validate({
       id: 123,
       name: 'Alex',
       friends: [{ name: 'bob' }, { name: 'john' }],
-      someIrrelevantKey: true,
+      someIrrelevantKey: true
     })
 
     if (!okValidation.ok) throw new Error('Should be OK')
@@ -157,13 +157,13 @@ describe('validation', () => {
     expect(okValidation.value).toEqual({
       id: 123,
       name: 'Alex',
-      friends: [{ name: 'bob' }, { name: 'john' }],
+      friends: [{ name: 'bob' }, { name: 'john' }]
     })
 
     const notOkValidation = person.validate({
       id: '123',
       name: 'Alex',
-      friends: [{ name: 'bob' }, { id: 'john' }],
+      friends: [{ name: 'bob' }, { id: 'john' }]
     })
 
     expect(!notOkValidation.ok && notOkValidation.errors.length).toBe(2)
@@ -175,7 +175,7 @@ describe('validation', () => {
     const alex2: Person = {
       id: 123,
       name: 'Alex',
-      friends: [{ name: 'bob' }, { name: 'john' }],
+      friends: [{ name: 'bob' }, { name: 'john' }]
     }
   })
 
@@ -185,9 +185,9 @@ describe('validation', () => {
       name: v.string,
       friends: v.array(
         v.object({
-          name: v.string,
+          name: v.string
         })
-      ),
+      )
     }
     const person = v.object(obj)
 
@@ -200,7 +200,7 @@ describe('validation', () => {
     const okValidation = strNumMap.validate({
       a: 1,
       b: 2,
-      c: 3,
+      c: 3
     })
 
     expect(okValidation.ok).toBe(true)
@@ -208,7 +208,7 @@ describe('validation', () => {
     const notOkValidation = strNumMap.validate({
       a: 1,
       b: 2,
-      c: '3',
+      c: '3'
     })
 
     expect(notOkValidation.ok).toBe(false)
@@ -223,11 +223,27 @@ describe('validation', () => {
     const notOkValidation2 = enumNumMap.validate({
       a: 1,
       bb: 2,
-      c: '3',
+      c: '3'
     })
 
     expect(!notOkValidation2.ok && notOkValidation2.errors.length).toBe(3)
     printErrorMessage(notOkValidation2)
+  })
+
+  it('can validate a Map-like dictionary where all values are optional', () => {
+    const dict = v.dictionary(v.union('A', 'B'), v.string.optional())
+    type OptionalDict = typeof dict.T
+
+    const okValidation = dict.validate({
+      B: 'hello'
+    })
+
+    expect(okValidation.ok && okValidation.value).toEqual({ B: 'hello' })
+
+    // Type assertion.
+    const _dict: OptionalDict = { A: 'hey' }
+    const _dict2: OptionalDict = {}
+    const _dict3: OptionalDict = { A: undefined }
   })
 
   it('can be recursive', () => {
@@ -236,20 +252,20 @@ describe('validation', () => {
     const category = v.recursion<Category>(self =>
       v.object({
         name: v.string,
-        categories: v.array(self),
+        categories: v.array(self)
       })
     )
 
     const okValidation = category.validate({
       name: 'tools',
-      categories: [{ name: 'piercing', categories: [] }],
+      categories: [{ name: 'piercing', categories: [] }]
     })
 
     expect(okValidation.ok).toBe(true)
 
     const notOkValidation = category.validate({
       name: 'tools',
-      categories: [{ name2: 'piercing', categories: [] }],
+      categories: [{ name2: 'piercing', categories: [] }]
     })
 
     expect(!notOkValidation.ok && notOkValidation.errors.length).toBe(1)
@@ -268,12 +284,12 @@ describe('validation', () => {
 
   it('can validate an intersection of types', () => {
     const flying = v.object({
-      flyingDistance: v.number,
+      flyingDistance: v.number
     })
 
     const squirrel = v.object({
       family: v.literal('Sciuridae'),
-      isCute: v.boolean.optional(),
+      isCute: v.boolean.optional()
     })
 
     const flyingSquirrel = v.intersection(flying, squirrel)
@@ -281,7 +297,7 @@ describe('validation', () => {
     const vulture = {
       flyingDistance: 5000,
       family: 'Accipitridae',
-      isCute: false,
+      isCute: false
     }
 
     const notOkValidation = flyingSquirrel.validate(vulture)
@@ -292,13 +308,13 @@ describe('validation', () => {
     const bob = {
       flyingDistance: 90,
       family: 'Sciuridae' as 'Sciuridae',
-      hasAnAgenda: true,
+      hasAnAgenda: true
     }
 
     const okValidation = flyingSquirrel.validate(bob)
     expect(okValidation.ok && okValidation.value).toEqual({
       flyingDistance: 90,
-      family: 'Sciuridae',
+      family: 'Sciuridae'
     })
 
     // smoke-test generated type
@@ -356,7 +372,7 @@ describe('validation', () => {
     const okValidation = validator.validate({
       type: 'A',
       name: 'Alfred',
-      _meta: 10,
+      _meta: 10
     })
 
     const okValidation2 = validator.validate({ type: 'B', data: 10 })
@@ -368,11 +384,11 @@ describe('validation', () => {
 
     expect(okValidation.ok && okValidation.value).toEqual({
       type: 'A',
-      name: 'Alfred',
+      name: 'Alfred'
     })
     expect(okValidation2.ok && okValidation2.value).toEqual({
       type: 'B',
-      data: 10,
+      data: 10
     })
 
     expect(notOkValidation.ok).toBe(false)
@@ -437,7 +453,7 @@ describe('validation', () => {
   it('can validate a combination of object and union values', () => {
     const validator = v.object({
       id: v.string,
-      params: v.union(v.null, v.object({ id: v.string })),
+      params: v.union(v.null, v.object({ id: v.string }))
     })
 
     const okValidation = validator.validate({ id: '1', params: null })
@@ -453,13 +469,13 @@ describe('validation', () => {
     const validator = v.object({
       id: v.string,
       query: v.string.optional(),
-      path: v.string.optional(),
+      path: v.string.optional()
     })
 
     const okValidation = validator.validate({ id: '1', query: 'q' })
     expect(okValidation.ok && okValidation.value).toEqual({
       id: '1',
-      query: 'q',
+      query: 'q'
     })
   })
 
@@ -508,8 +524,8 @@ describe('validation', () => {
       meatCooking: v.string,
       awesomeSidesNomNom: v.array(v.string),
       options: v.object({
-        doubleBacon: v.boolean,
-      }),
+        doubleBacon: v.boolean
+      })
     })
 
     const okSnakeCased = burger.validate(
@@ -518,8 +534,8 @@ describe('validation', () => {
         meat_cooking: 'rare',
         awesome_sides_nom_nom: ['loaded fries', 'barbecue sauce'],
         options: {
-          double_bacon: true,
-        },
+          double_bacon: true
+        }
       },
       { transformObjectKeys: v.snakeCaseTransformation }
     )
@@ -529,8 +545,8 @@ describe('validation', () => {
       meatCooking: 'rare',
       awesomeSidesNomNom: ['loaded fries', 'barbecue sauce'],
       options: {
-        doubleBacon: true,
-      },
+        doubleBacon: true
+      }
     }
 
     if (!okSnakeCased.ok) throw new Error('Should be OK')
@@ -542,14 +558,14 @@ describe('validation', () => {
     const burger = v.object({
       id: v.number,
       meatCooking: v.string,
-      awesomeSides: v.array(v.string),
+      awesomeSides: v.array(v.string)
     })
 
     const fieldInError = burger.validate(
       {
         id: 123,
         meat_cooking: 42,
-        awesome_sides: ['loaded fries', 'barbecue sauce'],
+        awesome_sides: ['loaded fries', 'barbecue sauce']
       },
       { transformObjectKeys: v.snakeCaseTransformation }
     )
@@ -568,14 +584,14 @@ describe('validation', () => {
     const burger = v.object({
       id: v.number,
       meatCooking: v.string,
-      awesomeSides: v.array(v.string),
+      awesomeSides: v.array(v.string)
     })
 
     const errorCamelCased = burger.validate(
       {
         id: 456,
         meatCooking: 'blue',
-        awesomeSides: ['potatoes', 'ketchup'],
+        awesomeSides: ['potatoes', 'ketchup']
       },
       { transformObjectKeys: v.snakeCaseTransformation }
     )
@@ -585,7 +601,7 @@ describe('validation', () => {
 
   it('default to international locale conversion and pass the turkish test', () => {
     const burger = v.object({
-      burgerId: v.number,
+      burgerId: v.number
     })
 
     const expected = burger.validate(
@@ -599,14 +615,14 @@ describe('validation', () => {
   it('should allow missing keys for optional object keys when using the generated type', () => {
     const options = v.object({
       name: v.string,
-      age: v.number.optional(),
+      age: v.number.optional()
     })
 
     type Options = typeof options.T
 
     // Should compile, even if we didn't specify 'age'
     const a: Options = {
-      name: 'a',
+      name: 'a'
     }
   })
 
@@ -657,7 +673,7 @@ describe('validation', () => {
     const validator = v
       .object({
         a: v.number,
-        b: v.string,
+        b: v.string
       })
       .nullable()
 
@@ -697,7 +713,7 @@ const validator = v.object({
   address: v
     .object({
       street: v.string,
-      zipCode: v.string,
+      zipCode: v.string
     })
     .map(address => ({ ...address, comment: 4312 })),
   preferences: v.union(
@@ -707,7 +723,7 @@ const validator = v.object({
   friends: v.array(
     v.object({
       id: v.string.tagged<UserId>(),
-      name: v.string,
+      name: v.string
     })
   ),
   dict: v.dictionary(v.string.tagged<UserId>(), v.number),
@@ -731,7 +747,7 @@ const validator = v.object({
       v.object({ data: v.string })
     )
   ),
-  tuple: v.tuple(v.string, v.number, v.object({ name: v.string })),
+  tuple: v.tuple(v.string, v.number, v.object({ name: v.string }))
 })
 
 type ValidatorType = typeof validator.T
