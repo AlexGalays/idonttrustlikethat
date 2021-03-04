@@ -412,6 +412,18 @@ validator.validate({
 }).ok // true
 ```
 
+If you need a partial dictionary, simply type your values as optional:  
+
+```ts
+import { dictionary, string, number, union } from 'idonttrustlikethat'
+
+const validator = dictionary(union('a', 'b', 'c'), number.optional())
+
+validator.validate({
+  b: 1
+}).ok // true
+```
+
 ### map, filter
 
 ```ts
