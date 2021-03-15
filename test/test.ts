@@ -1,6 +1,7 @@
 import * as v from '..'
 import { Ok, Err } from '..'
 import * as expect from 'expect'
+import { lift } from 'space-lift'
 
 const showErrorMessages = true
 
@@ -360,6 +361,25 @@ describe('validation', () => {
     expect(notOkValidation3.ok).toBe(false)
     expect(notOkValidation4.ok).toBe(false)
     printErrorMessage(notOkValidation3)
+  })
+
+  it('can use an union validator to validate against the keys of an object', () => {
+    const obj = {
+      age: 10,
+      address: '134 clapham manor street'
+    }
+
+    function keysOfValidator<T extends object>(object: T) {
+      return v.union(...lift(object).keys().value())
+    }
+
+    const validator = keysOfValidator(obj)
+
+    const okValidation = validator.validate('age')
+    const notOkValidation = validator.validate('nope')
+
+    expect(okValidation.ok && okValidation.value).toEqual('age')
+    expect(notOkValidation.ok).toBe(false)
   })
 
   it('can validate a discriminated union of types', () => {

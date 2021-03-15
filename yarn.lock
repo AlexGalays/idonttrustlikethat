@@ -189,6 +189,11 @@ sigmund@~1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/sigmund/-/sigmund-1.0.1.tgz#3ff21f198cad2175f9f3b781853fd94d0d19b590"
 
+space-lift@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/space-lift/-/space-lift-1.0.0.tgz#2652a02898ccc90b8f3c7858e15ad784c1167ba4"
+  integrity sha512-vf4a9yeXE+f0hY5JzhOJG7qYl9qV2bC1ITCPIKtTfBt3pnpaCKwTEuyRfi1HQj6RQwCd/PLOCA+ygRVQJGQE4Q==
+
 strip-ansi@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-3.0.1.tgz#6a385fb8853d952d5ff05d0e8aaf94278dc63dcf"
