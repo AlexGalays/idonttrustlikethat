@@ -1,7 +1,8 @@
-import * as v from '..'
-import { Ok, Err } from '..'
 import * as expect from 'expect'
 import { lift } from 'space-lift'
+
+import * as v from '../commonjs/core'
+import { Ok, Err } from '../commonjs/core'
 
 const showErrorMessages = true
 

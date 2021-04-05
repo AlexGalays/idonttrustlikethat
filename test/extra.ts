@@ -1,7 +1,19 @@
-import { isoDate, recursion } from '../commonjs/extra'
-import { Validation, errorDebugString, object, string, array } from '..'
 import * as expect from 'expect'
-import { booleanFromString, relativeUrl } from '../src/extra'
+
+import {
+  Validation,
+  errorDebugString,
+  object,
+  string,
+  array
+} from '../commonjs/core'
+
+import {
+  isoDate,
+  recursion,
+  booleanFromString,
+  relativeUrl
+} from '../commonjs/extra'
 
 const showErrorMessages = true
 
