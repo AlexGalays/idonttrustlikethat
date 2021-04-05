@@ -21,10 +21,21 @@ export const relativeUrl = string.flatMap(str => {
   try {
     new URL(str, 'http://some-domain.com')
     return Ok(str)
-  } catch (err2) {
-    return Err(`${str} is not a correct URL (absolute or relative)`)
+  } catch (err) {
+    return Err(`${str} is not a relative URL`)
   }
 })
+
+export const absoluteUrl = string.flatMap(str => {
+  try {
+    new URL(str)
+    return Ok(str)
+  } catch (err) {
+    return Err(`${str} is not an absolute URL`)
+  }
+})
+
+export const url = union(absoluteUrl, relativeUrl)
 
 export const booleanFromString = union('true', 'false').map(
   str => str === 'true'

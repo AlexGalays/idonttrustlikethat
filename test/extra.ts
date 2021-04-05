@@ -12,7 +12,9 @@ import {
   isoDate,
   recursion,
   booleanFromString,
-  relativeUrl
+  relativeUrl,
+  absoluteUrl,
+  url
 } from '../commonjs/extra'
 
 const showErrorMessages = true
@@ -69,13 +71,39 @@ describe('validation extras', () => {
   it('can validate a relative URL', () => {
     const okValidation = relativeUrl.validate('path')
     const okValidation2 = relativeUrl.validate('path/subpath')
-    const notOkValidation = booleanFromString.validate('//aa')
-    const notOkValidation2 = booleanFromString.validate(true)
+    const notOkValidation = relativeUrl.validate('////')
+    const notOkValidation2 = relativeUrl.validate(true)
 
     expect(okValidation.ok && okValidation.value).toBe('path')
     expect(okValidation2.ok && okValidation2.value).toBe('path/subpath')
     expect(notOkValidation.ok).toBe(false)
     expect(notOkValidation2.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+  })
+
+  it('can validate an absolute URL', () => {
+    const okValidation = absoluteUrl.validate('http://hi.com')
+    const notOkValidation = absoluteUrl.validate('//aa')
+    const notOkValidation2 = absoluteUrl.validate('/hey')
+
+    expect(okValidation.ok && okValidation.value).toBe('http://hi.com')
+    expect(notOkValidation.ok).toBe(false)
+    expect(notOkValidation2.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+  })
+
+  it('can validate an URL', () => {
+    const okValidation = url.validate('http://hi.com')
+    const okValidation2 = url.validate('path/subpath')
+    const notOkValidation = url.validate('////')
+
+    expect(okValidation.ok && okValidation.value).toBe('http://hi.com')
+    expect(okValidation2.ok && okValidation2.value).toBe('path/subpath')
+    expect(notOkValidation.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
   })
 })
 
