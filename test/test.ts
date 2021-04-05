@@ -5,7 +5,7 @@ import { lift } from 'space-lift'
 
 const showErrorMessages = true
 
-describe('validation', () => {
+describe('validation core', () => {
   it('can validate that a value is a null', () => {
     expect(v.null.validate(null).ok).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
@@ -245,42 +245,6 @@ describe('validation', () => {
     const _dict: OptionalDict = { A: 'hey' }
     const _dict2: OptionalDict = {}
     const _dict3: OptionalDict = { A: undefined }
-  })
-
-  it('can be recursive', () => {
-    type Category = { name: string; categories: Category[] }
-
-    const category = v.recursion<Category>(self =>
-      v.object({
-        name: v.string,
-        categories: v.array(self)
-      })
-    )
-
-    const okValidation = category.validate({
-      name: 'tools',
-      categories: [{ name: 'piercing', categories: [] }]
-    })
-
-    expect(okValidation.ok).toBe(true)
-
-    const notOkValidation = category.validate({
-      name: 'tools',
-      categories: [{ name2: 'piercing', categories: [] }]
-    })
-
-    expect(!notOkValidation.ok && notOkValidation.errors.length).toBe(1)
-    printErrorMessage(notOkValidation)
-  })
-
-  it('can validate an ISO date', () => {
-    const okValidation = v.isoDate.validate('2017-06-23T12:14:38.298Z')
-    expect(okValidation.ok && okValidation.value.getFullYear() === 2017).toBe(
-      true
-    )
-
-    const notOkValidation = v.isoDate.validate('hello')
-    expect(notOkValidation.ok).toBe(false)
   })
 
   it('can validate an intersection of types', () => {

@@ -4,9 +4,9 @@
   "sideEffects": false,
   "description": "Validation for TypeScript",
   "license": "MIT",
-  "main": "commonjs/validation.js",
-  "module": "es/validation.js",
-  "typings": "commonjs/validation.d.ts",
+  "main": "commonjs/core.js",
+  "module": "es/core.js",
+  "typings": "commonjs/core.d.ts",
   "devDependencies": {
     "chalk": "1.1.1",
     "cross-env": "5.2.0",
@@ -17,9 +17,9 @@
   },
   "scripts": {
     "build": "npm run build-es && npm run build-commonjs",
-    "build-es": "tsc validation.ts --outDir es --strict --noUnusedParameters --declaration --lib dom,es5,es6 --module es6 --target es6 --moduleResolution node",
-    "build-commonjs": "tsc validation.ts --outDir commonjs --strict --noUnusedParameters --declaration --lib dom,es5,es6 --target es5",
-    "pretest": "npm run build && tsc test/mocha.d.ts test/global.d.ts test/expect.d.ts test/test.ts --lib dom,es5,es6 --strict",
+    "build-es": "tsc src/core.ts src/extra.ts --outDir es --strict --noUnusedParameters --declaration --lib dom,es5,es6 --module es6 --target es6 --moduleResolution node",
+    "build-commonjs": "tsc src/core.ts src/extra.ts --outDir commonjs --strict --noUnusedParameters --declaration --lib dom,es5,es6 --target es5",
+    "pretest": "npm run build && tsc test/mocha.d.ts test/expect.d.ts test/test.ts test/extra.ts --lib dom,es5,es6 --strict",
     "test": "mocha --recursive && node test/testCompilationErrors.js",
     "locale-test": "cross-env LANG=tr_TR npm run test"
   },
