@@ -626,7 +626,7 @@ describe('validation core', () => {
   })
 
   it('can validate with a custom error string', () => {
-    const validator = v.string.withError('oh noes')
+    const validator = v.string.withError(value => `oh noes (${value})`)
 
     const result1 = validator.validate('123')
     const result2 = validator.validate(123)
@@ -637,7 +637,7 @@ describe('validation core', () => {
       !result2.ok &&
         result2.errors.length === 1 &&
         result2.errors[0].path === '' &&
-        result2.errors[0].message === 'oh noes'
+        result2.errors[0].message === 'oh noes (123)'
     ).toBe(true)
   })
 

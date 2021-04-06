@@ -17,14 +17,19 @@ export const isoDate = string.flatMap(str => {
     : Ok(date)
 })
 
-export const relativeUrl = string.flatMap(str => {
-  try {
-    new URL(str, 'http://some-domain.com')
-    return Ok(str)
-  } catch (err) {
-    return Err(`${str} is not a relative URL`)
-  }
-})
+//--------------------------------------
+//  url
+//--------------------------------------
+
+export const relativeUrl = (baseUrl: string = 'http://some-domain.com') =>
+  string.flatMap(str => {
+    try {
+      new URL(str, baseUrl)
+      return Ok(str)
+    } catch (err) {
+      return Err(`${str} is not a relative URL for baseURL: ${baseUrl}`)
+    }
+  })
 
 export const absoluteUrl = string.flatMap(str => {
   try {
@@ -35,8 +40,27 @@ export const absoluteUrl = string.flatMap(str => {
   }
 })
 
-export const url = union(absoluteUrl, relativeUrl)
+export const url = union(absoluteUrl, relativeUrl())
 
-export const booleanFromString = union('true', 'false').map(
-  str => str === 'true'
-)
+//--------------------------------------
+//  parsed from string
+//--------------------------------------
+
+export const booleanFromString = union('true', 'false')
+  .withError(v => `Expected "true" | "false", got: ${v}`)
+  .map(str => str === 'true')
+
+export const numberFromString = string.flatMap(str => {
+  const parsed = Number(str)
+  return Number.isNaN(parsed)
+    ? Err(`"${str}" is not a stringified number`)
+    : Ok(parsed)
+})
+
+export const intFromString = numberFromString.flatMap(num => {
+  return Number.isInteger(num) ? Ok(num) : Err(`${num} is not an int`)
+})
+
+//--------------------------------------
+//  generic constraints
+//--------------------------------------

@@ -14,7 +14,9 @@ import {
   booleanFromString,
   relativeUrl,
   absoluteUrl,
-  url
+  url,
+  numberFromString,
+  intFromString
 } from '../commonjs/extra'
 
 const showErrorMessages = true
@@ -56,6 +58,10 @@ describe('validation extras', () => {
     printErrorMessage(notOkValidation)
   })
 
+  //--------------------------------------
+  //  parsed from string
+  //--------------------------------------
+
   it('can validate a boolean from a string', () => {
     const okValidation = booleanFromString.validate('true')
     const okValidation2 = booleanFromString.validate('false')
@@ -66,13 +72,51 @@ describe('validation extras', () => {
     expect(okValidation2.ok && okValidation2.value).toBe(false)
     expect(notOkValidation.ok).toBe(false)
     expect(notOkValidation2.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
   })
 
+  it('can validate a number from a string', () => {
+    const okValidation = numberFromString.validate('123.4')
+    const okValidation2 = numberFromString.validate('100')
+    const notOkValidation = numberFromString.validate('aa123')
+    const notOkValidation2 = numberFromString.validate('123aa')
+
+    expect(okValidation.ok && okValidation.value).toBe(123.4)
+    expect(okValidation2.ok && okValidation2.value).toBe(100)
+    expect(notOkValidation.ok).toBe(false)
+    expect(notOkValidation2.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+  })
+
+  it('can validate an int from a string', () => {
+    const okValidation = intFromString.validate('123')
+    const notOkValidation = intFromString.validate('123.4')
+    const notOkValidation2 = intFromString.validate('123aa')
+    const notOkValidation3 = intFromString.validate('aaa123')
+
+    expect(okValidation.ok && okValidation.value).toBe(123)
+    expect(notOkValidation.ok).toBe(false)
+    expect(notOkValidation2.ok).toBe(false)
+    expect(notOkValidation3.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+  })
+
+  //--------------------------------------
+  //  url
+  //--------------------------------------
+
   it('can validate a relative URL', () => {
-    const okValidation = relativeUrl.validate('path')
-    const okValidation2 = relativeUrl.validate('path/subpath')
-    const notOkValidation = relativeUrl.validate('////')
-    const notOkValidation2 = relativeUrl.validate(true)
+    const okValidation = relativeUrl().validate('path')
+    const okValidation2 = relativeUrl(
+      'http://use-this-domain.com/hey'
+    ).validate('path/subpath')
+    const notOkValidation = relativeUrl(
+      'http://use-this-domain.com/hey'
+    ).validate('////')
+    const notOkValidation2 = relativeUrl().validate(true)
 
     expect(okValidation.ok && okValidation.value).toBe('path')
     expect(okValidation2.ok && okValidation2.value).toBe('path/subpath')
@@ -105,6 +149,10 @@ describe('validation extras', () => {
 
     printErrorMessage(notOkValidation)
   })
+
+  //--------------------------------------
+  //  generic constraints
+  //--------------------------------------
 })
 
 function printErrorMessage(validation: Validation<any>) {

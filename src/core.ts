@@ -45,8 +45,10 @@ export class Validator<T> {
     return transform(this, r => (r.ok ? fn(r.value) : r))
   }
 
-  withError(error: string) {
-    return transform(this, r => (r.ok ? r : Err(error)))
+  withError(errorFunction: (value: unknown) => string) {
+    return transform(this, (result, value) =>
+      result.ok ? result : Err(errorFunction(value))
+    )
   }
 
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
