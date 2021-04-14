@@ -31,6 +31,11 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [then](#then)
   - [recursion](#recursion)
   - [minSize][#minSize]
+  - [isoDate](#isoDate)
+  - [url](#url)
+  - [booleanFromString](#booleanFromString)
+  - [numberFromString](#numberFromString)
+  - [intFromString](#intFromString)
 
 ## How to
 
@@ -41,7 +46,7 @@ This library exposes a validator for all [primitive](#primitives) and object typ
 Here's how `isoDate` is defined internally:
 
 ```ts
-import { string, Err, Ok } from 'idonttrustlikethat/extra'
+import { string, Err, Ok } from 'idonttrustlikethat'
 
 const isoDate = string.and(str => {
   const date = new Date(str)
@@ -69,6 +74,8 @@ const minSize = (size: number) => <T>(array: T[]) =>
 const bigArray = array(string).and(minSize(100))
 bigArray.validate(['1', '2']).ok // false
 ```
+
+Note: the extra `minSize` validator does exactly that, but for more input types.  
 
 If you need to start from any value, you can use the `unknown` validator that always succeeds.
 
@@ -512,6 +519,54 @@ import {dictionary, string} from 'idonttrustlikethat'
 import {minSize} from 'idonttrustlikethat/extra'
 
 const dictionaryWithAtLeast10Items = dictionary(string, string).and(minSize(10))
+```
+
+### isoDate
+
+```ts
+import { isoDate } from 'idonttrustlikethat/extra'
+
+isoDate.validate('2011-10-05T14:48:00.000Z').ok // true
+```
+
+### url
+
+Validates that a string is a valid URL, and returns that string.
+
+```ts
+import { url, absoluteUrl, relativeUrl } from 'idonttrustlikethat/extra'
+
+absoluteUrl.validate('https://ebay.com').ok // true
+```
+
+### booleanFromString
+
+Validates that a string encodes a boolean and returns the boolean.
+
+```ts
+import { booleanFromString } from 'idonttrustlikethat/extra'
+
+booleanFromString.validate('true').ok // true
+```
+
+### numberFromString
+
+Validates that a string encodes a number (float or integer) and returns the number.
+
+```ts
+import { numberFromString } from 'idonttrustlikethat/extra'
+
+numberFromString.validate('123.4').ok // true
+```
+
+### intFromString
+
+Validates that a string encodes an integer and returns the number.
+
+```ts
+import { intFromString } from 'idonttrustlikethat/extra'
+
+intFromString.validate('123').ok // true
 ```
 
 ## Configuration
