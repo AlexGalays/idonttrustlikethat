@@ -133,11 +133,6 @@ type Configuration = {
 
 export type Validation<T> = Result<ValidationError[], T>
 
-// TODO: check if we can get rid of this due to better TS inference
-function success<T>(value: T): Validation<T> {
-  return Ok(value)
-}
-
 function failure(path: Path, message: string): Validation<never> {
   return Err([{ path, message }])
 }
@@ -174,26 +169,26 @@ export function is<T>(value: Value, validator: Validator<T>): value is T {
 //--------------------------------------
 
 const nullValidator: Validator<null> = new Validator((v, _c, p) =>
-  v === null ? success(v) : typeFailure(v, p, 'null')
+  v === null ? Ok(v) : typeFailure(v, p, 'null')
 )
 
 const undefinedValidator: Validator<undefined> = new Validator((v, _c, p) =>
-  v === void 0 ? success(v) : typeFailure(v, p, 'undefined')
+  v === void 0 ? Ok(v) : typeFailure(v, p, 'undefined')
 )
 
 export const string: Validator<string> = new Validator((v, _c, p) =>
-  typeof v === 'string' ? success(v) : typeFailure(v, p, 'string')
+  typeof v === 'string' ? Ok(v) : typeFailure(v, p, 'string')
 )
 
 export const number: Validator<number> = new Validator((v, _c, p) =>
-  typeof v === 'number' ? success(v) : typeFailure(v, p, 'number')
+  typeof v === 'number' ? Ok(v) : typeFailure(v, p, 'number')
 )
 
 export const boolean: Validator<boolean> = new Validator((v, _c, p) =>
-  typeof v === 'boolean' ? success(v) : typeFailure(v, p, 'boolean')
+  typeof v === 'boolean' ? Ok(v) : typeFailure(v, p, 'boolean')
 )
 
-export const unknown: Validator<unknown> = new Validator(v => success(v))
+export const unknown: Validator<unknown> = new Validator(Ok)
 
 //--------------------------------------
 //  array
@@ -384,7 +379,7 @@ type LiteralValidator<V extends Literal> = Validator<V> & { value: V }
 export function literal<V extends Literal>(value: V): LiteralValidator<V> {
   const validator = new Validator((v, _c, p) =>
     v === value
-      ? success(v as V)
+      ? Ok(v as V)
       : failure(p, `Expected ${prettifyJson(value)}, got ${prettifyJson(v)}`)
   )
 
@@ -422,7 +417,7 @@ export function intersection(...validators: any[]): any {
       }
     }
 
-    return success(result)
+    return Ok(result)
   })
 }
 
@@ -520,7 +515,7 @@ function transform<V, B>(
     const validated = validator.validate(v, config, p)
     const transformed = fn(validated, v, p)
 
-    if (transformed.ok) return success(transformed.value)
+    if (transformed.ok) return Ok(transformed.value)
 
     const error = transformed.errors
 
