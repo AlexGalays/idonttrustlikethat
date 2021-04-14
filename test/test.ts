@@ -40,17 +40,15 @@ describe('validation core', () => {
     const num: Number = 33
   })
 
-  it('can validate a value and further flatMap it', () => {
-    const validator = v.number.flatMap(x => Ok(String(x * 2)))
+  it('can validate a value and further refine it', () => {
+    const validator = v.number.and(x => Ok(String(x * 2)))
 
     type StringFromNumber = typeof validator.T
     const str: StringFromNumber = 'ok'
 
     expect((validator.validate(10) as Ok<unknown>).value).toBe('20')
 
-    const validator2 = v.number.flatMap(x =>
-      x < 1000 ? Err('hell no') : Ok(x)
-    )
+    const validator2 = v.number.and(x => (x < 1000 ? Err('hell no') : Ok(x)))
 
     type Number = typeof validator2.T
     const num: Number = 33
@@ -58,7 +56,7 @@ describe('validation core', () => {
     const result2 = validator2.validate(10)
     expect(!result2.ok && result2.errors[0].message).toBe('hell no')
 
-    const validator3 = v.number.flatMap(x =>
+    const validator3 = v.number.and(x =>
       x > 10 ? Ok(String(x).split('')) : Err('aww')
     )
 
@@ -72,19 +70,19 @@ describe('validation core', () => {
   })
 
   it('can compose two validators returning a single string error', () => {
-    const stringToInt = v.string.flatMap(str => {
+    const stringToInt = v.string.and(str => {
       const result = Number.parseInt(str, 10)
       if (Number.isFinite(result)) return Ok(result)
       return Err('Expected an integer-like string, got: ' + str)
     })
 
-    const timestampOk = v.number.flatMap(n => {
+    const timestampOk = v.number.and(n => {
       const date = new Date(n)
       if (date.getTime() === NaN) return Err('Not a valid date')
       return Ok(date)
     })
 
-    const timestampNope = v.number.flatMap(n => {
+    const timestampNope = v.number.and(n => {
       return Err('Not a valid date')
     })
 

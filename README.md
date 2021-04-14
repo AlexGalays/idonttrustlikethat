@@ -27,8 +27,8 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [default](#default)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
+  - [and](#and)
   - [then](#then)
-  - [flatMap](#flatMap)
   - [recursion](#recursion)
 
 ## How to
@@ -42,7 +42,7 @@ Here's how `isoDate` is defined internally:
 ```ts
 import { string, Err, Ok } from 'idonttrustlikethat'
 
-const isoDate = string.flatMap(str => {
+const isoDate = string.and(str => {
   const date = new Date(str)
   return isNaN(date.getTime())
     ? Err(`Expected ISO date, got: ${pretty(str)}`)
@@ -65,7 +65,7 @@ const minSize = (size: number) => <T>(array: T[]) =>
     ? Ok(array)
     : Err(`Expected an array with at least ${size} items`)
 
-const bigArray = array(string).flatMap(minSize(100))
+const bigArray = array(string).and(minSize(100))
 bigArray.validate(['1', '2']).ok // false
 ```
 
@@ -436,32 +436,32 @@ result.ok // true
 result.value // 1234...
 ```
 
-### flatMap
+### and
 
-Unlike `map` which deals with a validated value and returns a new value, `flatMap` can return either a validated value or an error.
+Unlike `map` which deals with a validated value and returns a new value, `and` can return either a validated value or an error.
 
 ```ts
 import { string, Ok, Err } from 'idonttrustlikethat'
 
-const validator = string.flatMap(str =>
+const validator = string.and(str =>
   str.length > 3 ? Ok(str) : Err(`No, that just won't do`)
 )
 ```
 
 ### then
 
-`then` allows the chaining of Validators. It can be used over `flatMap` if you already have the Validators ready to be reused.
+`then` allows the chaining of Validators. It can be used instead of `and` if you already have the Validators ready to be reused.
 
 ```ts
 // Validate that a string is a valid number (e.g, query string param)
-const stringToInt = v.string.flatMap(str => {
+const stringToInt = v.string.and(str => {
   const result = Number.parseInt(str, 10)
   if (Number.isFinite(result)) return Ok(result)
   return Err('Expected an integer-like string, got: ' + str)
 })
 
 // unix time -> Date
-const timestamp = v.number.flatMap(n => {
+const timestamp = v.number.and(n => {
   const date = new Date(n)
   if (isNaN(date.getTime())) return Err('Not a valid date')
   return Ok(date)

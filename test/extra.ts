@@ -158,16 +158,16 @@ describe('validation extras', () => {
   //--------------------------------------
 
   it('can validate that a container has a minimum size', () => {
-    const okValidation = array(number).flatMap(minSize(2)).validate([1, 2, 3])
-    const okValidation2 = string.flatMap(minSize(3)).validate('abc')
+    const okValidation = array(number).and(minSize(2)).validate([1, 2, 3])
+    const okValidation2 = string.and(minSize(3)).validate('abc')
     const okValidation3 = dictionary(string, string)
-      .flatMap(minSize(1))
+      .and(minSize(1))
       .validate({ a: 'a' })
 
-    const notOkValidation = array(number).flatMap(minSize(2)).validate([0])
-    const notOkValidation2 = string.flatMap(minSize(3)).validate('')
+    const notOkValidation = array(number).and(minSize(2)).validate([0])
+    const notOkValidation2 = string.and(minSize(3)).validate('')
     const notOkValidation3 = dictionary(string, string)
-      .flatMap(minSize(2))
+      .and(minSize(2))
       .validate({ a: 'a' })
 
     expect(okValidation.ok && okValidation.value).toEqual([1, 2, 3])

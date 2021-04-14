@@ -23,11 +23,11 @@ export class Validator<T> {
   }
 
   map<B>(fn: (value: T) => B): Validator<B> {
-    return this.flatMap(v => Ok(fn(v)))
+    return this.and(v => Ok(fn(v)))
   }
 
   filter(fn: (value: T) => boolean): Validator<T> {
-    return this.flatMap(v =>
+    return this.and(v =>
       fn(v) ? Ok(v) : Err(`filter error: ${prettifyJson(v)}"`)
     )
   }
@@ -41,7 +41,7 @@ export class Validator<T> {
     })
   }
 
-  flatMap<B>(fn: (value: T) => Result<string, B>): Validator<B> {
+  and<B>(fn: (value: T) => Result<string, B>): Validator<B> {
     return transform(this, r => (r.ok ? fn(r.value) : r))
   }
 
