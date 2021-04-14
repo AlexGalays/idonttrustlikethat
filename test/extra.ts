@@ -5,7 +5,9 @@ import {
   errorDebugString,
   object,
   string,
-  array
+  array,
+  number,
+  dictionary
 } from '../commonjs/core'
 
 import {
@@ -16,7 +18,8 @@ import {
   absoluteUrl,
   url,
   numberFromString,
-  intFromString
+  intFromString,
+  minSize
 } from '../commonjs/extra'
 
 const showErrorMessages = true
@@ -153,6 +156,32 @@ describe('validation extras', () => {
   //--------------------------------------
   //  generic constraints
   //--------------------------------------
+
+  it('can validate that a container has a minimum size', () => {
+    const okValidation = array(number).flatMap(minSize(2)).validate([1, 2, 3])
+    const okValidation2 = string.flatMap(minSize(3)).validate('abc')
+    const okValidation3 = dictionary(string, string)
+      .flatMap(minSize(1))
+      .validate({ a: 'a' })
+
+    const notOkValidation = array(number).flatMap(minSize(2)).validate([0])
+    const notOkValidation2 = string.flatMap(minSize(3)).validate('')
+    const notOkValidation3 = dictionary(string, string)
+      .flatMap(minSize(2))
+      .validate({ a: 'a' })
+
+    expect(okValidation.ok && okValidation.value).toEqual([1, 2, 3])
+    expect(okValidation2.ok && okValidation2.value).toEqual('abc')
+    expect(okValidation3.ok && okValidation3.value).toEqual({ a: 'a' })
+
+    expect(notOkValidation.ok).toBe(false)
+    expect(notOkValidation2.ok).toBe(false)
+    expect(notOkValidation3.ok).toBe(false)
+
+    printErrorMessage(notOkValidation)
+    printErrorMessage(notOkValidation2)
+    printErrorMessage(notOkValidation3)
+  })
 })
 
 function printErrorMessage(validation: Validation<any>) {

@@ -639,6 +639,8 @@ describe('validation core', () => {
         result2.errors[0].path === '' &&
         result2.errors[0].message === 'oh noes (123)'
     ).toBe(true)
+
+    printErrorMessage(result2)
   })
 
   it('can assign a custom nullable validator to a validator containing null', () => {

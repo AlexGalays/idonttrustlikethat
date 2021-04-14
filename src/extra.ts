@@ -64,3 +64,29 @@ export const intFromString = numberFromString.flatMap(num => {
 //--------------------------------------
 //  generic constraints
 //--------------------------------------
+
+type HasSize =
+  | object
+  | string
+  | Array<unknown>
+  | Map<unknown, unknown>
+  | Set<unknown>
+
+export function minSize<T extends HasSize>(minSize: number) {
+  return (value: T) => {
+    const size =
+      typeof value === 'string'
+        ? value.length
+        : Array.isArray(value)
+        ? value.length
+        : value instanceof Map || value instanceof Set
+        ? value.size
+        : Object.keys(value).length
+
+    return size >= minSize
+      ? Ok(value)
+      : Err(`Expected a min size of ${minSize}, got ${size}`)
+  }
+}
+
+export const nonEmpty = minSize(1)
