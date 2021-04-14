@@ -30,6 +30,7 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [and](#and)
   - [then](#then)
   - [recursion](#recursion)
+  - [minSize][#minSize]
 
 ## How to
 
@@ -40,7 +41,7 @@ This library exposes a validator for all [primitive](#primitives) and object typ
 Here's how `isoDate` is defined internally:
 
 ```ts
-import { string, Err, Ok } from 'idonttrustlikethat'
+import { string, Err, Ok } from 'idonttrustlikethat/extra'
 
 const isoDate = string.and(str => {
   const date = new Date(str)
@@ -68,6 +69,8 @@ const minSize = (size: number) => <T>(array: T[]) =>
 const bigArray = array(string).and(minSize(100))
 bigArray.validate(['1', '2']).ok // false
 ```
+
+If you need to start from any value, you can use the `unknown` validator that always succeeds.
 
 ### Deriving the typescript type from the validator type
 
@@ -118,23 +121,37 @@ import {
   Err,
   Ok,
   array,
-  boolean,
   dictionary,
   errorDebugString,
   intersection,
+  union,
   is,
-  isoDate,
   literal,
+  unknown,
   null as vnull,
   number,
   object,
   string,
-  snakeCaseTransformation,
-  recursion,
+  boolean,
   tuple,
   undefined,
-  union,
 } from 'idonttrustlikethat'
+```
+
+```ts
+import {
+  isoDate,
+  recursion,
+  snakeCaseTransformation,
+  relativeUrl,
+  absoluteUrl,
+  url,
+  booleanFromString,
+  numberFromString,
+  intFromString,
+  minSize,
+  nonEmpty
+} from 'idonttrustlikethat/extra'
 ```
 
 And all the types:
@@ -193,7 +210,6 @@ v.number
 v.boolean
 v.null
 v.undefined
-v.isoDate
 
 v.string.validate(12).ok // false
 ```
@@ -487,6 +503,17 @@ const category = recursion<Category>(self =>
 )
 ```
 
+### minSize
+
+Ensures an Array, Object, string, Map or Set has a minimum size. You can also use `nonEmpty`.
+
+```ts
+import {dictionary, string} from 'idonttrustlikethat'
+import {minSize} from 'idonttrustlikethat/extra'
+
+const dictionaryWithAtLeast10Items = dictionary(string, string).and(minSize(10))
+```
+
 ## Configuration
 
 A Configuration object can be passed to modify the default behavior of the validators:
@@ -496,6 +523,8 @@ A Configuration object can be passed to modify the default behavior of the valid
 Transforms every keys of every objects before validating.
 
 ```ts
+import {snakeCaseTransformation} from 'idonttrustlikethat/extra'
+
 const burger = v.object({
   options: v.object({
     doubleBacon: v.boolean,
@@ -508,6 +537,6 @@ const ok = burger.validate(
       double_bacon: true,
     },
   },
-  { transformObjectKeys: v.snakeCaseTransformation }
+  { transformObjectKeys: snakeCaseTransformation }
 )
 ```

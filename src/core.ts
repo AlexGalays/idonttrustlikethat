@@ -165,14 +165,6 @@ const rootPath = getPath('')
 
 const defaultConfig: Configuration = {}
 
-const upperThenLower = /([A-Z]+)([A-Z][a-z])/g
-const lowerThenUpper = /([a-z\\\\d])([A-Z])/g
-export const snakeCaseTransformation = (key: string): string =>
-  key
-    .replace(upperThenLower, '$1_$2')
-    .replace(lowerThenUpper, '$1_$2')
-    .toLowerCase()
-
 export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).ok
 }

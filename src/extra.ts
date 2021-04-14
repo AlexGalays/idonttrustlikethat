@@ -1,5 +1,9 @@
 import { string, Ok, Err, Validator, prettifyJson, union } from './core'
 
+//--------------------------------------
+//  extra validators
+//--------------------------------------
+
 export function recursion<T>(
   definition: (self: Validator<T>) => Validator<unknown>
 ): Validator<T> {
@@ -16,6 +20,18 @@ export const isoDate = string.and(str => {
     ? Err(`Expected ISO date, got: ${prettifyJson(str)}`)
     : Ok(date)
 })
+
+//--------------------------------------
+//  config
+//--------------------------------------
+
+const upperThenLower = /([A-Z]+)([A-Z][a-z])/g
+const lowerThenUpper = /([a-z\\\\d])([A-Z])/g
+export const snakeCaseTransformation = (key: string): string =>
+  key
+    .replace(upperThenLower, '$1_$2')
+    .replace(lowerThenUpper, '$1_$2')
+    .toLowerCase()
 
 //--------------------------------------
 //  url
@@ -62,7 +78,7 @@ export const intFromString = numberFromString.and(num => {
 })
 
 //--------------------------------------
-//  generic constraints
+//  generic refinement functions
 //--------------------------------------
 
 type HasSize =

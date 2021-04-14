@@ -3,6 +3,7 @@ import { lift } from 'space-lift'
 
 import * as v from '../commonjs/core'
 import { Ok, Err } from '../commonjs/core'
+import { snakeCaseTransformation } from '../commonjs/extra'
 
 const showErrorMessages = true
 
@@ -520,7 +521,7 @@ describe('validation core', () => {
           double_bacon: true
         }
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     const expected = {
@@ -550,7 +551,7 @@ describe('validation core', () => {
         meat_cooking: 42,
         awesome_sides: ['loaded fries', 'barbecue sauce']
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(fieldInError.ok).toBe(false)
@@ -576,7 +577,7 @@ describe('validation core', () => {
         meatCooking: 'blue',
         awesomeSides: ['potatoes', 'ketchup']
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(errorCamelCased.ok).toBe(false)
@@ -589,7 +590,7 @@ describe('validation core', () => {
 
     const expected = burger.validate(
       { burger_id: 456 },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(expected.ok && expected.value).toEqual({ burgerId: 456 })
