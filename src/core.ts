@@ -14,6 +14,9 @@ export class Validator<T> {
   // Phantom type
   T: T = (undefined as any) as T
 
+  /**
+   * Validate any value.
+   */
   validate(value: unknown, config?: Configuration, path?: Path): Validation<T> {
     return this.validationFunction(
       value,
@@ -22,16 +25,25 @@ export class Validator<T> {
     )
   }
 
+  /**
+   * Maps the validated value or do nothing if this validator returned an error.
+   */
   map<B>(fn: (value: T) => B): Validator<B> {
     return this.and(v => Ok(fn(v)))
   }
 
+  /**
+   * Filter this validated value or do nothing if this validator returned an error.
+   */
   filter(fn: (value: T) => boolean): Validator<T> {
     return this.and(v =>
       fn(v) ? Ok(v) : Err(`filter error: ${prettifyJson(v)}"`)
     )
   }
 
+  /**
+   * Chains this validator with another one, in series. A value must be valid for both validators.
+   */
   then<B>(validator: Validator<B>): Validator<B> {
     const self = this
     return new Validator((v, config, p) => {
@@ -41,17 +53,30 @@ export class Validator<T> {
     })
   }
 
+  /**
+   * Further refines this validator's output.
+   */
   and<B>(fn: (value: T) => Result<string, B>): Validator<B> {
     return transform(this, r => (r.ok ? fn(r.value) : r))
   }
 
+  /**
+   * Swaps the default error string with a custom one.
+   */
   withError(errorFunction: (value: unknown) => string) {
     return transform(this, (result, value) =>
       result.ok ? result : Err(errorFunction(value))
     )
   }
 
+  /**
+   * Refines this string to make it more strongly typed.
+   */
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
+
+  /**
+   * Refines this number to make it more strongly typed.
+   */
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
   tagged<TAG>(): Validator<TAG> {
     return (this as {}) as Validator<TAG>
