@@ -30,7 +30,7 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [and](#and)
   - [then](#then)
   - [recursion](#recursion)
-  - [minSize][#minSize]
+  - [minSize](#minSize)
   - [isoDate](#isoDate)
   - [url](#url)
   - [booleanFromString](#booleanFromString)
