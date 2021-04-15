@@ -1,11 +1,13 @@
-import * as v from '..'
-import { Ok, Err } from '..'
 import * as expect from 'expect'
 import { lift } from 'space-lift'
 
+import * as v from '../commonjs/core'
+import { Ok, Err } from '../commonjs/core'
+import { snakeCaseTransformation } from '../commonjs/extra'
+
 const showErrorMessages = true
 
-describe('validation', () => {
+describe('validation core', () => {
   it('can validate that a value is a null', () => {
     expect(v.null.validate(null).ok).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
@@ -39,17 +41,15 @@ describe('validation', () => {
     const num: Number = 33
   })
 
-  it('can validate a value and further flatMap it', () => {
-    const validator = v.number.flatMap(x => Ok(String(x * 2)))
+  it('can validate a value and further refine it', () => {
+    const validator = v.number.and(x => Ok(String(x * 2)))
 
     type StringFromNumber = typeof validator.T
     const str: StringFromNumber = 'ok'
 
     expect((validator.validate(10) as Ok<unknown>).value).toBe('20')
 
-    const validator2 = v.number.flatMap(x =>
-      x < 1000 ? Err('hell no') : Ok(x)
-    )
+    const validator2 = v.number.and(x => (x < 1000 ? Err('hell no') : Ok(x)))
 
     type Number = typeof validator2.T
     const num: Number = 33
@@ -57,7 +57,7 @@ describe('validation', () => {
     const result2 = validator2.validate(10)
     expect(!result2.ok && result2.errors[0].message).toBe('hell no')
 
-    const validator3 = v.number.flatMap(x =>
+    const validator3 = v.number.and(x =>
       x > 10 ? Ok(String(x).split('')) : Err('aww')
     )
 
@@ -71,19 +71,19 @@ describe('validation', () => {
   })
 
   it('can compose two validators returning a single string error', () => {
-    const stringToInt = v.string.flatMap(str => {
+    const stringToInt = v.string.and(str => {
       const result = Number.parseInt(str, 10)
       if (Number.isFinite(result)) return Ok(result)
       return Err('Expected an integer-like string, got: ' + str)
     })
 
-    const timestampOk = v.number.flatMap(n => {
+    const timestampOk = v.number.and(n => {
       const date = new Date(n)
       if (date.getTime() === NaN) return Err('Not a valid date')
       return Ok(date)
     })
 
-    const timestampNope = v.number.flatMap(n => {
+    const timestampNope = v.number.and(n => {
       return Err('Not a valid date')
     })
 
@@ -245,42 +245,6 @@ describe('validation', () => {
     const _dict: OptionalDict = { A: 'hey' }
     const _dict2: OptionalDict = {}
     const _dict3: OptionalDict = { A: undefined }
-  })
-
-  it('can be recursive', () => {
-    type Category = { name: string; categories: Category[] }
-
-    const category = v.recursion<Category>(self =>
-      v.object({
-        name: v.string,
-        categories: v.array(self)
-      })
-    )
-
-    const okValidation = category.validate({
-      name: 'tools',
-      categories: [{ name: 'piercing', categories: [] }]
-    })
-
-    expect(okValidation.ok).toBe(true)
-
-    const notOkValidation = category.validate({
-      name: 'tools',
-      categories: [{ name2: 'piercing', categories: [] }]
-    })
-
-    expect(!notOkValidation.ok && notOkValidation.errors.length).toBe(1)
-    printErrorMessage(notOkValidation)
-  })
-
-  it('can validate an ISO date', () => {
-    const okValidation = v.isoDate.validate('2017-06-23T12:14:38.298Z')
-    expect(okValidation.ok && okValidation.value.getFullYear() === 2017).toBe(
-      true
-    )
-
-    const notOkValidation = v.isoDate.validate('hello')
-    expect(notOkValidation.ok).toBe(false)
   })
 
   it('can validate an intersection of types', () => {
@@ -557,7 +521,7 @@ describe('validation', () => {
           double_bacon: true
         }
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     const expected = {
@@ -587,7 +551,7 @@ describe('validation', () => {
         meat_cooking: 42,
         awesome_sides: ['loaded fries', 'barbecue sauce']
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(fieldInError.ok).toBe(false)
@@ -613,7 +577,7 @@ describe('validation', () => {
         meatCooking: 'blue',
         awesomeSides: ['potatoes', 'ketchup']
       },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(errorCamelCased.ok).toBe(false)
@@ -626,7 +590,7 @@ describe('validation', () => {
 
     const expected = burger.validate(
       { burger_id: 456 },
-      { transformObjectKeys: v.snakeCaseTransformation }
+      { transformObjectKeys: snakeCaseTransformation }
     )
 
     expect(expected.ok && expected.value).toEqual({ burgerId: 456 })
@@ -661,7 +625,7 @@ describe('validation', () => {
   })
 
   it('can validate with a custom error string', () => {
-    const validator = v.string.withError('oh noes')
+    const validator = v.string.withError(value => `oh noes (${value})`)
 
     const result1 = validator.validate('123')
     const result2 = validator.validate(123)
@@ -672,8 +636,10 @@ describe('validation', () => {
       !result2.ok &&
         result2.errors.length === 1 &&
         result2.errors[0].path === '' &&
-        result2.errors[0].message === 'oh noes'
+        result2.errors[0].message === 'oh noes (123)'
     ).toBe(true)
+
+    printErrorMessage(result2)
   })
 
   it('can assign a custom nullable validator to a validator containing null', () => {

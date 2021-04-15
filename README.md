@@ -27,9 +27,15 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [default](#default)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
+  - [and](#and)
   - [then](#then)
-  - [flatMap](#flatMap)
   - [recursion](#recursion)
+  - [minSize][#minSize]
+  - [isoDate](#isoDate)
+  - [url](#url)
+  - [booleanFromString](#booleanFromString)
+  - [numberFromString](#numberFromString)
+  - [intFromString](#intFromString)
 
 ## How to
 
@@ -42,7 +48,7 @@ Here's how `isoDate` is defined internally:
 ```ts
 import { string, Err, Ok } from 'idonttrustlikethat'
 
-const isoDate = string.flatMap(str => {
+const isoDate = string.and(str => {
   const date = new Date(str)
   return isNaN(date.getTime())
     ? Err(`Expected ISO date, got: ${pretty(str)}`)
@@ -65,9 +71,13 @@ const minSize = (size: number) => <T>(array: T[]) =>
     ? Ok(array)
     : Err(`Expected an array with at least ${size} items`)
 
-const bigArray = array(string).flatMap(minSize(100))
+const bigArray = array(string).and(minSize(100))
 bigArray.validate(['1', '2']).ok // false
 ```
+
+Note: the extra `minSize` validator does exactly that, but for more input types.  
+
+If you need to start from any value, you can use the `unknown` validator that always succeeds.
 
 ### Deriving the typescript type from the validator type
 
@@ -118,23 +128,37 @@ import {
   Err,
   Ok,
   array,
-  boolean,
   dictionary,
   errorDebugString,
   intersection,
+  union,
   is,
-  isoDate,
   literal,
+  unknown,
   null as vnull,
   number,
   object,
   string,
-  snakeCaseTransformation,
-  recursion,
+  boolean,
   tuple,
   undefined,
-  union,
 } from 'idonttrustlikethat'
+```
+
+```ts
+import {
+  isoDate,
+  recursion,
+  snakeCaseTransformation,
+  relativeUrl,
+  absoluteUrl,
+  url,
+  booleanFromString,
+  numberFromString,
+  intFromString,
+  minSize,
+  nonEmpty
+} from 'idonttrustlikethat/extra'
 ```
 
 And all the types:
@@ -193,7 +217,6 @@ v.number
 v.boolean
 v.null
 v.undefined
-v.isoDate
 
 v.string.validate(12).ok // false
 ```
@@ -436,32 +459,32 @@ result.ok // true
 result.value // 1234...
 ```
 
-### flatMap
+### and
 
-Unlike `map` which deals with a validated value and returns a new value, `flatMap` can return either a validated value or an error.
+Unlike `map` which deals with a validated value and returns a new value, `and` can return either a validated value or an error.
 
 ```ts
 import { string, Ok, Err } from 'idonttrustlikethat'
 
-const validator = string.flatMap(str =>
+const validator = string.and(str =>
   str.length > 3 ? Ok(str) : Err(`No, that just won't do`)
 )
 ```
 
 ### then
 
-`then` allows the chaining of Validators. It can be used over `flatMap` if you already have the Validators ready to be reused.
+`then` allows the chaining of Validators. It can be used instead of `and` if you already have the Validators ready to be reused.
 
 ```ts
 // Validate that a string is a valid number (e.g, query string param)
-const stringToInt = v.string.flatMap(str => {
+const stringToInt = v.string.and(str => {
   const result = Number.parseInt(str, 10)
   if (Number.isFinite(result)) return Ok(result)
   return Err('Expected an integer-like string, got: ' + str)
 })
 
 // unix time -> Date
-const timestamp = v.number.flatMap(n => {
+const timestamp = v.number.and(n => {
   const date = new Date(n)
   if (isNaN(date.getTime())) return Err('Not a valid date')
   return Ok(date)
@@ -487,6 +510,65 @@ const category = recursion<Category>(self =>
 )
 ```
 
+### minSize
+
+Ensures an Array, Object, string, Map or Set has a minimum size. You can also use `nonEmpty`.
+
+```ts
+import {dictionary, string} from 'idonttrustlikethat'
+import {minSize} from 'idonttrustlikethat/extra'
+
+const dictionaryWithAtLeast10Items = dictionary(string, string).and(minSize(10))
+```
+
+### isoDate
+
+```ts
+import { isoDate } from 'idonttrustlikethat/extra'
+
+isoDate.validate('2011-10-05T14:48:00.000Z').ok // true
+```
+
+### url
+
+Validates that a string is a valid URL, and returns that string.
+
+```ts
+import { url, absoluteUrl, relativeUrl } from 'idonttrustlikethat/extra'
+
+absoluteUrl.validate('https://ebay.com').ok // true
+```
+
+### booleanFromString
+
+Validates that a string encodes a boolean and returns the boolean.
+
+```ts
+import { booleanFromString } from 'idonttrustlikethat/extra'
+
+booleanFromString.validate('true').ok // true
+```
+
+### numberFromString
+
+Validates that a string encodes a number (float or integer) and returns the number.
+
+```ts
+import { numberFromString } from 'idonttrustlikethat/extra'
+
+numberFromString.validate('123.4').ok // true
+```
+
+### intFromString
+
+Validates that a string encodes an integer and returns the number.
+
+```ts
+import { intFromString } from 'idonttrustlikethat/extra'
+
+intFromString.validate('123').ok // true
+```
+
 ## Configuration
 
 A Configuration object can be passed to modify the default behavior of the validators:
@@ -496,6 +578,8 @@ A Configuration object can be passed to modify the default behavior of the valid
 Transforms every keys of every objects before validating.
 
 ```ts
+import {snakeCaseTransformation} from 'idonttrustlikethat/extra'
+
 const burger = v.object({
   options: v.object({
     doubleBacon: v.boolean,
@@ -508,6 +592,6 @@ const ok = burger.validate(
       double_bacon: true,
     },
   },
-  { transformObjectKeys: v.snakeCaseTransformation }
+  { transformObjectKeys: snakeCaseTransformation }
 )
 ```

@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "lib": [ "es5", "es6", "es2015.core", "dom", "ES2016", "ES2017"],
+    "lib": ["es5", "es6", "es2015.core", "dom", "ES2016", "ES2017"],
     "target": "ES5",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "pretty": true,
-    "noErrorTruncation": true
+    "noErrorTruncation": true,
+    "noEmit": true
   },
   "compileOnSave": false,
-  "filesGlob": ["validation.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
