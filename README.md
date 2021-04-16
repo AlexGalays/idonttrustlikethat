@@ -75,7 +75,7 @@ const bigArray = array(string).and(minSize(100))
 bigArray.validate(['1', '2']).ok // false
 ```
 
-Note: the extra `minSize` validator does exactly that, but for more input types.  
+Note: the `minSize` validator does exactly that, but for more input types.  
 
 If you need to start from any value, you can use the `unknown` validator that always succeeds.
 
@@ -158,7 +158,7 @@ import {
   intFromString,
   minSize,
   nonEmpty
-} from 'idonttrustlikethat/extra'
+} from 'idonttrustlikethat'
 ```
 
 And all the types:
@@ -516,7 +516,7 @@ Ensures an Array, Object, string, Map or Set has a minimum size. You can also us
 
 ```ts
 import {dictionary, string} from 'idonttrustlikethat'
-import {minSize} from 'idonttrustlikethat/extra'
+import {minSize} from 'idonttrustlikethat'
 
 const dictionaryWithAtLeast10Items = dictionary(string, string).and(minSize(10))
 ```
@@ -524,7 +524,7 @@ const dictionaryWithAtLeast10Items = dictionary(string, string).and(minSize(10))
 ### isoDate
 
 ```ts
-import { isoDate } from 'idonttrustlikethat/extra'
+import { isoDate } from 'idonttrustlikethat'
 
 isoDate.validate('2011-10-05T14:48:00.000Z').ok // true
 ```
@@ -534,7 +534,7 @@ isoDate.validate('2011-10-05T14:48:00.000Z').ok // true
 Validates that a string is a valid URL, and returns that string.
 
 ```ts
-import { url, absoluteUrl, relativeUrl } from 'idonttrustlikethat/extra'
+import { url, absoluteUrl, relativeUrl } from 'idonttrustlikethat'
 
 absoluteUrl.validate('https://ebay.com').ok // true
 ```
@@ -544,7 +544,7 @@ absoluteUrl.validate('https://ebay.com').ok // true
 Validates that a string encodes a boolean and returns the boolean.
 
 ```ts
-import { booleanFromString } from 'idonttrustlikethat/extra'
+import { booleanFromString } from 'idonttrustlikethat'
 
 booleanFromString.validate('true').ok // true
 ```
@@ -554,7 +554,7 @@ booleanFromString.validate('true').ok // true
 Validates that a string encodes a number (float or integer) and returns the number.
 
 ```ts
-import { numberFromString } from 'idonttrustlikethat/extra'
+import { numberFromString } from 'idonttrustlikethat'
 
 numberFromString.validate('123.4').ok // true
 ```
@@ -564,7 +564,7 @@ numberFromString.validate('123.4').ok // true
 Validates that a string encodes an integer and returns the number.
 
 ```ts
-import { intFromString } from 'idonttrustlikethat/extra'
+import { intFromString } from 'idonttrustlikethat'
 
 intFromString.validate('123').ok // true
 ```
@@ -578,7 +578,7 @@ A Configuration object can be passed to modify the default behavior of the valid
 Transforms every keys of every objects before validating.
 
 ```ts
-import {snakeCaseTransformation} from 'idonttrustlikethat/extra'
+import {snakeCaseTransformation} from 'idonttrustlikethat'
 
 const burger = v.object({
   options: v.object({

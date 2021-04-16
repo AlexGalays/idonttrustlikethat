@@ -1,4 +1,4 @@
-import * as v from '../'
+import * as v from '../commonjs/validation'
 
 // type derivation to null but assigned to a number @shouldNotCompile
 const a: typeof v.null.T = 33
@@ -11,9 +11,9 @@ const person = v.object({
   name: v.string,
   friends: v.array(
     v.object({
-      name: v.string,
+      name: v.string
     })
-  ),
+  )
 })
 
 type Person = typeof person.T
@@ -28,7 +28,7 @@ const d: typeof person.T = {}
 const e: typeof person.T = {
   id: 123,
   name: '111',
-  friends: [{ name: 111 }],
+  friends: [{ name: 111 }]
 }
 
 // Creating an union with completely wrong members @shouldNotCompile

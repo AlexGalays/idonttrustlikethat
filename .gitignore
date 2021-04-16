@@ -4,5 +4,4 @@ node_modules
 commonjs
 es
 test/test.js
-test/extra.js
 *.log
