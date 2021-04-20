@@ -3,6 +3,7 @@ import { lift } from 'space-lift'
 
 import * as v from '../commonjs/validation'
 import { Ok, Err } from '../commonjs/validation'
+import { nonEmpty } from '../src/validation'
 
 const showErrorMessages = true
 
@@ -837,6 +838,26 @@ describe('validation core', () => {
     printErrorMessage(notOkValidation)
     printErrorMessage(notOkValidation2)
     printErrorMessage(notOkValidation3)
+  })
+
+  it('returns the correct type for nonEmpty', () => {
+    const array = [1, 2, 3]
+    type ArrayType = typeof array
+    const okValidation = v.array(v.number).and(nonEmpty()).validate(array)
+    const obj = { a: 'a' }
+    type ObjType = typeof obj
+    const okValidation2 = v
+      .object({ a: v.string })
+      .and(nonEmpty())
+      .validate(obj)
+
+    if (okValidation.ok && okValidation2.ok) {
+      // Check assignation/type
+      const _arrayType: ArrayType = okValidation.value
+      const _objType: ObjType = okValidation2.value
+    } else {
+      throw new Error()
+    }
   })
 })
 
