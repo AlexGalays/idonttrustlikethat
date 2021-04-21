@@ -840,24 +840,26 @@ describe('validation core', () => {
     printErrorMessage(notOkValidation3)
   })
 
-  it('returns the correct type for nonEmpty', () => {
+  it('can validate that a container is not empty', () => {
     const array = [1, 2, 3]
     type ArrayType = typeof array
-    const okValidation = v.array(v.number).and(nonEmpty()).validate(array)
+    const okValidation = v.array(v.number).and(nonEmpty).validate(array)
+
     const obj = { a: 'a' }
     type ObjType = typeof obj
-    const okValidation2 = v
-      .object({ a: v.string })
-      .and(nonEmpty())
-      .validate(obj)
+    const okValidation2 = v.object({ a: v.string }).and(nonEmpty).validate(obj)
+
+    const notOkValidation = v.object({ a: v.string }).and(nonEmpty).validate({})
 
     if (okValidation.ok && okValidation2.ok) {
-      // Check assignation/type
+      // Type assertion.
       const _arrayType: ArrayType = okValidation.value
       const _objType: ObjType = okValidation2.value
     } else {
       throw new Error()
     }
+
+    expect(notOkValidation.ok).toBe(false)
   })
 })
 

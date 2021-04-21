@@ -650,7 +650,9 @@ type HasSize =
   | Map<unknown, unknown>
   | Set<unknown>
 
-export function minSize<T extends HasSize>(minSize: number) {
+export function minSize<T extends HasSize>(
+  minSize: number
+): (value: T) => Result<string, T> {
   return (value: T) => {
     const size =
       typeof value === 'string'
@@ -667,4 +669,7 @@ export function minSize<T extends HasSize>(minSize: number) {
   }
 }
 
-export const nonEmpty = <T extends HasSize>() => minSize<T>(1)
+// Note: this a fully fledged function so that inference on T will work.
+export function nonEmpty<T extends HasSize>(value: T): Result<string, T> {
+  return minSize<T>(1)(value)
+}
