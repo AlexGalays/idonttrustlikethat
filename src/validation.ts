@@ -667,4 +667,4 @@ export function minSize<T extends HasSize>(minSize: number) {
   }
 }
 
-export const nonEmpty = minSize(1)
+export const nonEmpty = <T extends HasSize>() => minSize<T>(1)
