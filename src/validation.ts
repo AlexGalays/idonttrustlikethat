@@ -42,7 +42,14 @@ export class Validator<T> {
   }
 
   /**
-   * Chains this validator with another one, in series. A value must be valid for both validators.
+   * Chains this validator with another one, in series.
+   * The resulting value of the first validator will be the input of the second.
+   * 
+   * ```ts
+   * declare const stringToInt: Validator<number>
+   * declare const intToDate: Validator<Date>
+   * const stringToDate = stringToInt.then(intToDate)
+   * ```
    */
   then<B>(validator: Validator<B>): Validator<B> {
     const self = this
