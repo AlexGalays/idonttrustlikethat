@@ -617,11 +617,13 @@ describe('validation core', () => {
     const validated2 = v.union(v.null, v.string).default('yes').validate(null)
     const validated3 = validator.validate('')
     const validated4 = validator.validate('hey')
+    const validated5 = v.string.default('yes').validate(undefined)
 
     expect(validated1.ok && validated1.value).toEqual('yes')
     expect(validated2.ok && validated2.value).toEqual('yes')
     expect(validated3.ok && validated3.value).toEqual('')
     expect(validated4.ok && validated4.value).toEqual('hey')
+    expect(validated5.ok && validated5.value).toEqual('yes')
   })
 
   it('can validate with a custom error string', () => {
