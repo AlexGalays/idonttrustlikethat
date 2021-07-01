@@ -108,7 +108,7 @@ export class Validator<T> {
    */
   default<D>(defaultValue: D): Validator<NonNullable<T> | D>
   default<D>(defaultValue: D): Validator<unknown> {
-    return this.map(v => (v === null || v === undefined ? defaultValue : v))
+    return this.nullable().map(v => (v === null || v === undefined ? defaultValue : v))
   }
 }
 
