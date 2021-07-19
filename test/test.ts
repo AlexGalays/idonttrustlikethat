@@ -3,7 +3,15 @@ import { lift } from 'space-lift'
 
 import * as v from '../commonjs/validation'
 import { Ok, Err } from '../commonjs/validation'
-import { nonEmpty } from '../src/validation'
+import {
+  discriminatedUnion,
+  intersection,
+  literal,
+  nonEmpty,
+  number,
+  object,
+  string
+} from '../src/validation'
 
 const showErrorMessages = true
 
@@ -384,6 +392,28 @@ describe('validation core', () => {
     printErrorMessage(notOkValidation2)
     printErrorMessage(notOkValidation3)
     printErrorMessage(notOkValidation4)
+  })
+
+  it('can validate a discriminated union made of intersection types', () => {
+    const a = object({ type: literal('a'), a: number })
+    const b = object({ b: string })
+    const ab = intersection(a, b)
+
+    const c = object({ type: literal('c'), c: number })
+    const d = object({ d: string })
+    const cd = intersection(c, d)
+
+    const validator = discriminatedUnion('type', ab, cd)
+
+    const notOKValidation = validator.validate({ type: 'c', c: 10 })
+    const okValidation = validator.validate({ type: 'c', c: 10, d: 'dd' })
+
+    expect(notOKValidation.ok).toBe(false)
+    expect(okValidation.ok && okValidation.value).toEqual({
+      type: 'c',
+      c: 10,
+      d: 'dd'
+    })
   })
 
   it('can validate a literal value', () => {

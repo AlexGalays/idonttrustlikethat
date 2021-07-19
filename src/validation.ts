@@ -12,7 +12,7 @@ export class Validator<T> {
   ) {}
 
   // Phantom type
-  T: T = (undefined as any) as T
+  T: T = undefined as any as T
 
   /**
    * Validate any value.
@@ -44,7 +44,7 @@ export class Validator<T> {
   /**
    * Chains this validator with another one, in series.
    * The resulting value of the first validator will be the input of the second.
-   * 
+   *
    * ```ts
    * declare const stringToInt: Validator<number>
    * declare const intToDate: Validator<Date>
@@ -86,7 +86,7 @@ export class Validator<T> {
    */
   tagged<TAG extends number>(this: Validator<number>): Validator<TAG>
   tagged<TAG>(): Validator<TAG> {
-    return (this as {}) as Validator<TAG>
+    return this as {} as Validator<TAG>
   }
 
   /**
@@ -108,7 +108,9 @@ export class Validator<T> {
    */
   default<D>(defaultValue: D): Validator<NonNullable<T> | D>
   default<D>(defaultValue: D): Validator<unknown> {
-    return this.nullable().map(v => (v === null || v === undefined ? defaultValue : v))
+    return this.nullable().map(v =>
+      v === null || v === undefined ? defaultValue : v
+    )
   }
 }
 
@@ -407,11 +409,23 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
+// Just like ObjectValidator... but with one extra step. The compiler can't make ObjectValidator work here.
+type IntersectionOfObjectsResult<VS extends ObjectValidator<any>[]> = Validator<
+  Id<UnionToIntersection<VS[number]['T']>>
+> & {
+  props: Id<UnionToIntersection<VS[number]['props']>>
+}
+// Special signature for when all validators are object validators: we want the output to be compatible with ObjectValidator too.
+export function intersection<VS extends ObjectValidator<any>[]>(
+  ...vs: VS
+): IntersectionOfObjectsResult<VS>
 export function intersection<VS extends AnyValidator[]>(
   ...vs: VS
 ): Validator<Id<UnionToIntersection<VS[number]['T']>>>
 export function intersection(...validators: any[]): any {
-  return new Validator((v, config, p) => {
+  const allObjectValidators = validators.every(v => Boolean(v.props))
+
+  const validator = new Validator((v, config, p) => {
     let result: any = {}
 
     for (let i = 0; i < validators.length; i++) {
@@ -426,6 +440,15 @@ export function intersection(...validators: any[]): any {
 
     return Ok(result)
   })
+
+  if (allObjectValidators) {
+    ;(validator as any).props = validators.reduce((acc, v) => {
+      Object.assign(acc, v.props)
+      return acc
+    }, {})
+  }
+
+  return validator
 }
 
 //--------------------------------------
