@@ -345,7 +345,7 @@ describe('validation core', () => {
     expect(notOkValidation.ok).toBe(false)
   })
 
-  it.only('can validate a discriminated union of types', () => {
+  it('can validate a discriminated union of types', () => {
     const validator = v.discriminatedUnion(
       'type',
       v.object({ type: v.literal('A'), name: v.string }),
