@@ -359,6 +359,7 @@ const bag = union(null, 'hello', true, 33)
 ### discriminatedUnion
 
 Although you could also use `union` for your discriminated unions, `discriminatedUnion` is faster and has better error messages for that special case. It will also catch common typos at the type level.  
+Note that `discriminatedUnion` only works with `object` and `intersection` (of objects) validators. Also, the discriminating property must be either a `literal` or `union` of primitives.
 
 ```ts
 import {discriminatedUnion, literal, string} from 'idonttrustlikethat'

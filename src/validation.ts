@@ -6,7 +6,7 @@ export class Validator<T> {
   constructor(
     private validationFunction: (
       value: unknown,
-      config: Configuration,
+      context: Context,
       path: Path
     ) => Validation<T>
   ) {}
@@ -17,10 +17,10 @@ export class Validator<T> {
   /**
    * Validate any value.
    */
-  validate(value: unknown, config?: Configuration, path?: Path): Validation<T> {
+  validate(value: unknown, context?: Context, path?: Path): Validation<T> {
     return this.validationFunction(
       value,
-      config || defaultConfig,
+      context || { ...defaultContext },
       path || rootPath
     )
   }
@@ -53,10 +53,10 @@ export class Validator<T> {
    */
   then<B>(validator: Validator<B>): Validator<B> {
     const self = this
-    return new Validator((v, config, p) => {
-      const validated = self.validate(v, config, p)
+    return new Validator((v, context, p) => {
+      const validated = self.validate(v, context, p)
       if (!validated.ok) return validated
-      return validator.validate(validated.value, config, p)
+      return validator.validate(validated.value, context, p)
     })
   }
 
@@ -71,9 +71,11 @@ export class Validator<T> {
    * Swaps the default error string with a custom one.
    */
   withError(errorFunction: (value: unknown) => string) {
-    return transform(this, (result, value) =>
-      result.ok ? result : Err(errorFunction(value))
-    )
+    return transform(this, (result, value, _p, context) => {
+      if (result.ok || '_hadCustomError' in context) return result
+      ;(context as any)._hadCustomError = true
+      return Err(errorFunction(value))
+    })
   }
 
   /**
@@ -92,14 +94,14 @@ export class Validator<T> {
   /**
    * Returns a new validator where undefined and null are also valid inputs.
    */
-  nullable(): Validator<T | null | undefined> {
+  nullable(): UnionValidator<[T, null, undefined]> {
     return union(this, nullValidator, undefinedValidator)
   }
 
   /**
    * Returns a new validator where undefined is also a valid input.
    */
-  optional(): Validator<T | undefined> {
+  optional(): UnionValidator<[T, undefined]> {
     return union(this, undefinedValidator)
   }
 
@@ -136,7 +138,7 @@ export interface ValidationError {
 type Value = unknown
 type Path = string & { __tag: 'path' }
 
-type Configuration = {
+type Context = {
   transformObjectKeys?: (key: string) => string
 }
 
@@ -167,7 +169,7 @@ export function getPath(name: string, parent?: string): Path {
 
 const rootPath = getPath('')
 
-const defaultConfig: Configuration = {}
+const defaultContext: Context = {}
 
 export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).ok
@@ -204,7 +206,7 @@ export const unknown: Validator<unknown> = new Validator(Ok)
 //--------------------------------------
 
 export function array<A>(validator: Validator<A>): Validator<A[]> {
-  return new Validator((v, config, p) => {
+  return new Validator((v, context, p) => {
     if (!Array.isArray(v)) return typeFailure(v, p, 'array')
 
     const validatedArray: A[] = []
@@ -212,7 +214,11 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
 
     for (let i = 0; i < v.length; i++) {
       const item = v[i]
-      const validation = validator.validate(item, config, getPath(String(i), p))
+      const validation = validator.validate(
+        item,
+        { ...context },
+        getPath(String(i), p)
+      )
 
       if (validation.ok) {
         validatedArray.push(validation.value)
@@ -236,7 +242,7 @@ export function tuple<VS extends AnyValidator[]>(
 >
 
 export function tuple(...validators: any[]): any {
-  return new Validator((v, config, p) => {
+  return new Validator((v, context, p) => {
     if (!Array.isArray(v)) return typeFailure(v, p, 'Tuple')
     if (v.length !== validators.length)
       return failure(
@@ -251,7 +257,7 @@ export function tuple(...validators: any[]): any {
       const item = v[i]
       const validation = validators[i].validate(
         item,
-        config,
+        { ...context },
         getPath(String(i), p)
       )
 
@@ -296,7 +302,7 @@ export type ObjectOf<P extends Props> = ObjectWithOptionalKeysOf<Unpack<P>>
 type ObjectValidator<P extends Props> = Validator<ObjectOf<P>> & { props: P }
 
 export function object<P extends Props>(props: P): ObjectValidator<P> {
-  const validator = new Validator((v, config, p) => {
+  const validator = new Validator((v, context, p) => {
     if (v == null || typeof v !== 'object') return typeFailure(v, p, 'object')
 
     const validatedObject: any = {}
@@ -304,15 +310,15 @@ export function object<P extends Props>(props: P): ObjectValidator<P> {
 
     for (let key in props) {
       const transformedKey =
-        config.transformObjectKeys !== undefined
-          ? config.transformObjectKeys(key)
+        context.transformObjectKeys !== undefined
+          ? context.transformObjectKeys(key)
           : key
 
       const value = (v as any)[transformedKey]
       const validator = props[key]
       const validation = validator.validate(
         value,
-        config,
+        { ...context },
         getPath(transformedKey, p)
       )
 
@@ -338,7 +344,7 @@ export function dictionary<K extends string, V>(
   domain: Validator<K>,
   codomain: Validator<V>
 ): Validator<ObjectWithOptionalKeysOf<Record<K, V>>> {
-  return new Validator((v, config, p) => {
+  return new Validator((v, context, p) => {
     if (v == null || typeof v !== 'object') return typeFailure(v, p, 'object')
 
     const validatedDict: any = {}
@@ -348,8 +354,8 @@ export function dictionary<K extends string, V>(
       const value = (v as any)[key]
 
       const path = getPath(key, p)
-      const domainValidation = domain.validate(key, config, path)
-      const codomainValidation = codomain.validate(value, config, path)
+      const domainValidation = domain.validate(key, { ...context }, path)
+      const codomainValidation = codomain.validate(value, { ...context }, path)
 
       if (domainValidation.ok) {
         key = domainValidation.value
@@ -383,7 +389,7 @@ export function dictionary<K extends string, V>(
 //--------------------------------------
 
 type Literal = string | number | boolean | null | undefined
-type LiteralValidator<V extends Literal> = Validator<V> & { value: V }
+type LiteralValidator<V extends Literal> = Validator<V> & { literal: V }
 
 export function literal<V extends Literal>(value: V): LiteralValidator<V> {
   const validator = new Validator((v, _c, p) =>
@@ -392,7 +398,7 @@ export function literal<V extends Literal>(value: V): LiteralValidator<V> {
       : failure(p, `Expected ${prettifyJson(value)}, got ${prettifyJson(v)}`)
   )
 
-  ;(validator as any).value = value
+  ;(validator as any).literal = value
   return validator as LiteralValidator<V>
 }
 
@@ -425,11 +431,11 @@ export function intersection<VS extends AnyValidator[]>(
 export function intersection(...validators: any[]): any {
   const allObjectValidators = validators.every(v => Boolean(v.props))
 
-  const validator = new Validator((v, config, p) => {
+  const validator = new Validator((v, context, p) => {
     let result: any = {}
 
     for (let i = 0; i < validators.length; i++) {
-      const validation = validators[i].validate(v, config, p)
+      const validation = validators[i].validate(v, context, p)
 
       if (validation.ok) {
         result = { ...result, ...(validation.value as object) }
@@ -455,19 +461,46 @@ export function intersection(...validators: any[]): any {
 //  union
 //--------------------------------------
 
+type ValidatorFromLiteral<T> = T extends Literal ? LiteralValidator<T> : never
+
+type TupleOfLiteralsToTupleOfValidators<T extends Literal[]> = {
+  [Index in keyof T]: ValidatorFromLiteral<T[Index]>
+}
+
+type TupleOfAnyToTupleOfValidators<T extends any[]> = {
+  [Index in keyof T]: Validator<T[Index]>
+}
+
+type UnionValidator<T extends any[]> = Validator<T[number]> & {
+  union: TupleOfAnyToTupleOfValidators<T>
+}
+
+type UnionValidatorOfValidators<VS extends AnyValidator[]> = Validator<
+  VS[number]['T']
+> & { union: VS }
+
+type UnionValidatorOfLiterals<LS extends Literal[]> = Validator<LS[number]> & {
+  union: TupleOfLiteralsToTupleOfValidators<LS>
+}
+
+export function union<LS extends Literal[]>(
+  ...union: LS
+): UnionValidatorOfLiterals<LS>
+
 export function union<VS extends AnyValidator[]>(
-  ...vs: VS
-): Validator<VS[number]['T']>
-export function union<LS extends Literal[]>(...ls: LS): Validator<LS[number]>
+  ...union: VS
+): UnionValidatorOfValidators<VS>
+
 export function union(...validators: any[]): any {
   const probe = validators[0]
 
+  // All arguments are validators
   if (probe && typeof probe === 'object') {
-    return new Validator((v, config, p) => {
+    const validator = new Validator((v, context, p) => {
       const errors: ValidationError[][] = []
 
       for (let i = 0; i < validators.length; i++) {
-        const validation = validators[i].validate(v, config, p)
+        const validation = validators[i].validate(v, { ...context }, p)
         if (validation.ok) return validation
         else errors.push(validation.errors)
       }
@@ -489,16 +522,28 @@ export function union(...validators: any[]): any {
         )} \nis not part of the union: \n\n${detailString}`
       )
     })
+
+    ;(validator as any).union = validators
+
+    return validator
   }
 
-  return new Validator((v, config, p) => {
+  // All arguments are primitives
+
+  validators = validators.map(literal)
+
+  const validator = new Validator((v, context, p) => {
     for (let i = 0; i < validators.length; i++) {
-      const validator = literal(validators[i])
-      const validation = validator.validate(v, config, p)
+      const validator = validators[i]
+      const validation = validator.validate(v, { ...context }, p)
       if (validation.ok) return validation
     }
     return failure(p, `The value ${prettifyJson(v)} is not part of the union`)
   })
+
+  ;(validator as any).union = validators
+
+  return validator
 }
 
 //--------------------------------------
@@ -507,25 +552,45 @@ export function union(...validators: any[]): any {
 
 export function discriminatedUnion<
   TYPEKEY extends string,
-  VS extends ObjectValidator<{ [K in TYPEKEY]: LiteralValidator<any> }>[]
+  VS extends ObjectValidator<
+    {
+      [K in TYPEKEY]:
+        | LiteralValidator<any>
+        | UnionValidatorOfLiterals<Literal[]>
+    }
+  >[]
 >(typeKey: TYPEKEY, ...vs: VS): Validator<VS[number]['T']> {
-  const validatorByType = vs.reduce(
-    (map, validator) => map.set(validator.props[typeKey].value, validator),
-    new Map<Literal, VS[number]>()
-  )
-  return new Validator((v, config, p) => {
+  const validatorByType = vs.reduce((map, validator) => {
+    const v: LiteralValidator<any> | UnionValidatorOfLiterals<Literal[]> =
+      validator.props[typeKey]
+
+    if ('literal' in v) {
+      map.set(v.literal, validator)
+    } else {
+      v.union.forEach(l => map.set(l.literal, validator))
+    }
+
+    return map
+  }, new Map<Literal, VS[number]>())
+  return new Validator((v, context, p) => {
     if (v == null) return failure(p, `union member is nullish: ${v}`)
 
     const typeValue = (v as any)[typeKey]
     const validator = validatorByType.get(typeValue)
 
-    if (typeValue === undefined || !validator)
+    if (typeValue === undefined) {
       return failure(
         p,
-        `union member ${typeKey}=${typeValue} is unknown. ${prettifyJson(v)}`
+        `discriminant key ("${typeKey}") missing in: ${prettifyJson(v)}`
       )
+    } else if (!validator) {
+      return failure(
+        p,
+        `discriminant value ("${typeKey}": "${typeValue}") not part of the union`
+      )
+    }
 
-    return validator.validate(v, config, p)
+    return validator.validate(v, context, p)
   })
 }
 
@@ -538,20 +603,20 @@ function transform<V, B>(
   fn: (
     result: Validation<V>,
     value: Value,
-    p: Path
+    p: Path,
+    context: Context
   ) => Result<string | ValidationError[], B>
 ): Validator<B> {
-  return new Validator((v, config, p) => {
-    const validated = validator.validate(v, config, p)
-    const transformed = fn(validated, v, p)
+  return new Validator((v, context, p) => {
+    const validated = validator.validate(v, context, p)
+    const transformed = fn(validated, v, p, context)
 
-    if (transformed.ok) return Ok(transformed.value)
+    if (transformed.ok) return transformed
 
     const error = transformed.errors
-
     if (typeof error === 'string') return failure(p, error)
 
-    return Err(error)
+    return transformed as Err<ValidationError[]>
   })
 }
 
@@ -599,8 +664,8 @@ export { nullValidator as null, undefinedValidator as undefined }
 export function recursion<T>(
   definition: (self: Validator<T>) => Validator<unknown>
 ): Validator<T> {
-  const Self = new Validator<T>((value, config, path) =>
-    Result.validate(value, config, path)
+  const Self = new Validator<T>((value, context, path) =>
+    Result.validate(value, context, path)
   )
   const Result: any = definition(Self)
   return Result
@@ -614,7 +679,7 @@ export const isoDate = string.and(str => {
 })
 
 //--------------------------------------
-//  config
+//  context
 //--------------------------------------
 
 const upperThenLower = /([A-Z]+)([A-Z][a-z])/g

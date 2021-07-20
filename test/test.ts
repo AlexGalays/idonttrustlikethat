@@ -3,15 +3,6 @@ import { lift } from 'space-lift'
 
 import * as v from '../commonjs/validation'
 import { Ok, Err } from '../commonjs/validation'
-import {
-  discriminatedUnion,
-  intersection,
-  literal,
-  nonEmpty,
-  number,
-  object,
-  string
-} from '../src/validation'
 
 const showErrorMessages = true
 
@@ -354,7 +345,7 @@ describe('validation core', () => {
     expect(notOkValidation.ok).toBe(false)
   })
 
-  it('can validate a discriminated union of types', () => {
+  it.only('can validate a discriminated union of types', () => {
     const validator = v.discriminatedUnion(
       'type',
       v.object({ type: v.literal('A'), name: v.string }),
@@ -395,15 +386,15 @@ describe('validation core', () => {
   })
 
   it('can validate a discriminated union made of intersection types', () => {
-    const a = object({ type: literal('a'), a: number })
-    const b = object({ b: string })
-    const ab = intersection(a, b)
+    const a = v.object({ type: v.literal('a'), a: v.number })
+    const b = v.object({ b: v.string })
+    const ab = v.intersection(a, b)
 
-    const c = object({ type: literal('c'), c: number })
-    const d = object({ d: string })
-    const cd = intersection(c, d)
+    const c = v.object({ type: v.union('c', 'cc'), c: v.number })
+    const d = v.object({ d: v.string })
+    const cd = v.intersection(c, d)
 
-    const validator = discriminatedUnion('type', ab, cd)
+    const validator = v.discriminatedUnion('type', ab, cd)
 
     const notOKValidation = validator.validate({ type: 'c', c: 10 })
     const okValidation = validator.validate({ type: 'c', c: 10, d: 'dd' })
@@ -657,10 +648,17 @@ describe('validation core', () => {
   })
 
   it('can validate with a custom error string', () => {
-    const validator = v.string.withError(value => `oh noes (${value})`)
+    const validator = v.string
+      .withError(value => `not a string (${value})`)
+      .and(v.minSize(2))
+      .withError(_ => 'wrong size')
+      .filter(value => value !== 'GOD')
+      .withError(_ => 'God is not allowed')
 
     const result1 = validator.validate('123')
     const result2 = validator.validate(123)
+    const result3 = validator.validate('1')
+    const result4 = validator.validate('GOD')
 
     expect(result1.ok && result1.value).toEqual('123')
 
@@ -668,10 +666,78 @@ describe('validation core', () => {
       !result2.ok &&
         result2.errors.length === 1 &&
         result2.errors[0].path === '' &&
-        result2.errors[0].message === 'oh noes (123)'
-    ).toBe(true)
+        result2.errors[0].message
+    ).toBe('not a string (123)')
+
+    expect(!result3.ok && result3.errors[0].message).toBe('wrong size')
+    expect(!result4.ok && result4.errors[0].message).toBe('God is not allowed')
 
     printErrorMessage(result2)
+    printErrorMessage(result3)
+  })
+
+  it('can validate with a custom error string for each item of an Array or value of an Object', () => {
+    const user = v.object({
+      id: v.string
+        .withError(_ => 'user id is mandatory')
+        .and(v.minSize(1))
+        .withError(_ => 'min size is 1')
+        .filter(value => Number(value) >= 0)
+        .withError(v => `Got a negative id (${v})`)
+    })
+
+    const arrayValidator = v.array(user)
+
+    const objectValidator = v.object({
+      a: user,
+      b: user,
+      c: user,
+      d: user,
+      e: user
+    })
+
+    const result1 = arrayValidator.validate([{ id: '1' }, { id: '2' }])
+    const result2 = arrayValidator.validate([
+      { id: '1' },
+      { id: 3 },
+      { id: '' },
+      { id: '-5' },
+      {}
+    ])
+    const result3 = objectValidator.validate({
+      a: { id: '1' },
+      b: { id: 3 },
+      c: { id: '' },
+      d: { id: '-5' },
+      e: {}
+    })
+
+    expect(result1.ok).toBe(true)
+    if (result2.ok) throw new Error('should be Err')
+    if (result3.ok) throw new Error('should be Err')
+
+    expect(result2.errors.length).toBe(4)
+    expect(result2.errors[0]!.message).toBe('user id is mandatory')
+    expect(result2.errors[1]!.message).toBe('min size is 1')
+    expect(result2.errors[2]!.message).toBe('Got a negative id (-5)')
+    expect(result2.errors[3]!.message).toBe('user id is mandatory')
+
+    expect(result3.errors.length).toBe(4)
+    expect(result3.errors.find(e => e.path === 'b.id')!.message).toBe(
+      'user id is mandatory'
+    )
+
+    expect(result3.errors.find(e => e.path === 'c.id')!.message).toBe(
+      'min size is 1'
+    )
+
+    expect(result3.errors.find(e => e.path === 'd.id')!.message).toBe(
+      'Got a negative id (-5)'
+    )
+
+    expect(result3.errors.find(e => e.path === 'e.id')!.message).toBe(
+      'user id is mandatory'
+    )
   })
 
   it('can assign a custom nullable validator to a validator containing null', () => {
@@ -875,13 +941,19 @@ describe('validation core', () => {
   it('can validate that a container is not empty', () => {
     const array = [1, 2, 3]
     type ArrayType = typeof array
-    const okValidation = v.array(v.number).and(nonEmpty).validate(array)
+    const okValidation = v.array(v.number).and(v.nonEmpty).validate(array)
 
     const obj = { a: 'a' }
     type ObjType = typeof obj
-    const okValidation2 = v.object({ a: v.string }).and(nonEmpty).validate(obj)
+    const okValidation2 = v
+      .object({ a: v.string })
+      .and(v.nonEmpty)
+      .validate(obj)
 
-    const notOkValidation = v.object({ a: v.string }).and(nonEmpty).validate({})
+    const notOkValidation = v
+      .object({ a: v.string })
+      .and(v.nonEmpty)
+      .validate({})
 
     if (okValidation.ok && okValidation2.ok) {
       // Type assertion.
@@ -908,7 +980,7 @@ function immutable<T>(obj: T): Immutable<T> {
 
 type UserId = string & { __tag: 'UserIds' }
 
-const validator = v.object({
+const tooltipValidator = v.object({
   id: v.string.tagged<UserId>(),
   address: v
     .object({
@@ -950,7 +1022,7 @@ const validator = v.object({
   tuple: v.tuple(v.string, v.number, v.object({ name: v.string }))
 })
 
-type ValidatorType = typeof validator.T
+type ValidatorType = typeof tooltipValidator.T
 type Dict = ValidatorType['dict']
 type IntersectionOfUnions = ValidatorType['intersectionOfUnions']
 type UnionOfIntersections = ValidatorType['unionOfIntersections']
