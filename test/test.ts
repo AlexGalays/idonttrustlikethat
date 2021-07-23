@@ -54,7 +54,7 @@ describe('validation core', () => {
     const num: Number = 33
 
     const result2 = validator2.validate(10)
-    expect(!result2.ok && result2.errors[0].message).toBe('hell no')
+    expect(!result2.ok && result2.errors[0]!.message).toBe('hell no')
 
     const validator3 = v.number.and(x =>
       x > 10 ? Ok(String(x).split('')) : Err('aww')
@@ -65,7 +65,7 @@ describe('validation core', () => {
 
     expect((validator3.validate(20) as Ok<unknown>).value).toEqual(['2', '0'])
     const result3 = validator3.validate(5)
-    expect(!result3.ok && result3.errors[0].message).toBe('aww')
+    expect(!result3.ok && result3.errors[0]!.message).toBe('aww')
     printErrorMessage(result3)
   })
 
@@ -95,7 +95,7 @@ describe('validation core', () => {
     printErrorMessage(result2)
 
     const result3 = stringToInt.then(timestampNope).validate('01')
-    expect(!result3.ok && result3.errors[0].message).toBe('Not a valid date')
+    expect(!result3.ok && result3.errors[0]!.message).toBe('Not a valid date')
     printErrorMessage(result3)
   })
 
@@ -580,7 +580,7 @@ describe('validation core', () => {
     printErrorMessage(fieldInError)
 
     if (!fieldInError.ok) {
-      const { path } = fieldInError.errors[0]
+      const { path } = fieldInError.errors[0]!
       expect(path).toEqual('meat_cooking')
     }
   })
@@ -665,12 +665,12 @@ describe('validation core', () => {
     expect(
       !result2.ok &&
         result2.errors.length === 1 &&
-        result2.errors[0].path === '' &&
-        result2.errors[0].message
+        result2.errors[0]!.path === '' &&
+        result2.errors[0]!.message
     ).toBe('not a string (123)')
 
-    expect(!result3.ok && result3.errors[0].message).toBe('wrong size')
-    expect(!result4.ok && result4.errors[0].message).toBe('God is not allowed')
+    expect(!result3.ok && result3.errors[0]!.message).toBe('wrong size')
+    expect(!result4.ok && result4.errors[0]!.message).toBe('God is not allowed')
 
     printErrorMessage(result2)
     printErrorMessage(result3)
@@ -957,7 +957,8 @@ describe('validation core', () => {
 
     if (okValidation.ok && okValidation2.ok) {
       // Type assertion.
-      const _arrayType: ArrayType = okValidation.value
+      const _arrayType: ArrayType = okValidation.value.map(_ => _)
+      const _nonEmpty = okValidation.value[0].toExponential() // The returned array should let you access its first item
       const _objType: ObjType = okValidation2.value
     } else {
       throw new Error()

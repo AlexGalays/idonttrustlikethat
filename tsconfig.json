@@ -4,6 +4,7 @@
     "target": "ES5",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
     "pretty": true,
     "noErrorTruncation": true,
     "noEmit": true

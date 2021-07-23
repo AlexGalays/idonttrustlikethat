@@ -315,7 +315,7 @@ export function object<P extends Props>(props: P): ObjectValidator<P> {
           : key
 
       const value = (v as any)[transformedKey]
-      const validator = props[key]
+      const validator = props[key]!
       const validation = validator.validate(
         value,
         { ...context },
@@ -765,6 +765,12 @@ export function minSize<T extends HasSize>(
 }
 
 // Note: this a fully fledged function so that inference on T will work.
-export function nonEmpty<T extends HasSize>(value: T): Result<string, T> {
-  return minSize<T>(1)(value)
+export function nonEmpty<T extends HasSize>(
+  value: T
+): Result<string, NonEmptyResult<T>> {
+  return minSize<T>(1)(value) as any
 }
+
+type NonEmptyResult<T> = T extends Array<infer E> ? NonEmptyArray<E> : T
+
+export type NonEmptyArray<E> = [E, ...E[]]
