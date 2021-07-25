@@ -7,10 +7,10 @@ The focus of the lib is on small size and an easy API to add new validations.
 Note: This module uses very precise Typescript types. Thus, it is mandatory to at least have the following `tsconfig` / `tsc`'s compiler options flag: `strict`: `true`.
 
 - [How to](#how-to)
-
   - [Create a new validation](#create-a-new-validation)
   - [Deriving the typescript type from the validator type](#deriving-the-typescript-type-from-the-validator-type)
   - [Customize error messages](#customize-error-messages)
+  - [Perform async checks](#perform-async-checks)
 
 - [Exports](#exports)
 - [API](#api)
@@ -25,6 +25,7 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [intersection](#intersection)
   - [optional, nullable](#optional-nullable)
   - [default](#default)
+  - [withError](#with-error)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
   - [and](#and)
@@ -109,7 +110,7 @@ If you say, use this library to validate a Form data, it's best to assign your e
 import { object, string } from 'idonttrustlikethat'
 
 const mandatoryFieldError = 'This field is mandatory'
-const mandatoryString = string.withError(mandatoryFieldError)
+const mandatoryString = string.withError(_ => mandatoryFieldError)
 
 const formValidator = object({
   name: mandatoryString,
@@ -117,6 +118,32 @@ const formValidator = object({
 
 // {ok: false, errors: [{path: 'name', message: 'This field is mandatory'}]}
 const result = formValidator.validate({})
+```
+
+### Perform async checks
+
+You don't! Some "similar" libraries offer this functionality but it's a pretty bad idea. It accumulates concerns inside your validation layer (you now have to pass DB connections, API tokens, etc to what should be dumb validators) and polutes the API signatures (once you go async for a tiny bit, everything now has to be async)  
+
+For instance, instead of trying to make a call to the DB to check some unicity constraint inside your validator, instead prepare the call's result before hand then pass that to a function that creates a new validator using that result, for instance:
+
+```ts
+import {string, object} from 'idonttrustlikethat' 
+
+function makeUserValidator(params: {isEmailKnown: boolean}) {
+  const {isEmailKnown} = params
+
+  return object({
+    name: string,
+    email: string
+      .withError(_ => 'The email is mandatory')
+      .filter(_ => !isEmailKnown)
+      .withError(_ => 'This email is already in use')
+  })
+}
+
+const isEmailKnown = await db.user.checkIfEmailIsKnown(...)
+
+const validatedUser = makeUserValidator({isEmailKnown}).validate(body)
 ```
 
 ## Exports
@@ -414,12 +441,31 @@ Returns a default value if the validated value was either null or undefined.
 ```ts
 import { string } from 'idonttrustlikethat'
 
-const validator = string.optional().default(':(')
+const validator = string.default(':(')
 
 const result = validator.validate(undefined)
 
 result.ok && result.value // :(
 ```
+
+### withError
+
+Sets a custom error message onto the validator.  
+The validator have decent error messages by default for developers but you will sometimes want to customize these.  
+Note that the first `withError` encountering an error wins but a single `withError` will apply to **any** error encountered in the chain.  
+
+```
+import {} from 'idonttrustlikethat'
+
+const validator = object({
+  id: string
+    .withError(i => `Expected a string, got ${i}`) // This will activate if the input is not a string or is missing.
+    .and(nonEmpty())
+    .withError(_ => `The id cannot be the empty string`) // This will activate only if the id is a string but is empty.
+})
+```
+
+
 
 ### dictionary
 
