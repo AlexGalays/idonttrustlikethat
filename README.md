@@ -454,8 +454,8 @@ Sets a custom error message onto the validator.
 The validator have decent error messages by default for developers but you will sometimes want to customize these.  
 Note that the first `withError` encountering an error wins but a single `withError` will apply to **any** error encountered in the chain.  
 
-```
-import {} from 'idonttrustlikethat'
+```ts
+import {object, string} from 'idonttrustlikethat'
 
 const validator = object({
   id: string
