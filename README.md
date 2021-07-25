@@ -25,7 +25,7 @@ Note: This module uses very precise Typescript types. Thus, it is mandatory to a
   - [intersection](#intersection)
   - [optional, nullable](#optional-nullable)
   - [default](#default)
-  - [withError](#with-error)
+  - [withError](#witherror)
   - [dictionary](#dictionary)
   - [map, filter](#map-filter)
   - [and](#and)
