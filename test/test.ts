@@ -264,10 +264,20 @@ describe('validation core', () => {
       isCute: false
     }
 
+    const honeyBadger = {
+      isCute: 'ohno'
+    }
+
     const notOkValidation = flyingSquirrel.validate(vulture)
-    expect(notOkValidation.ok).toBe(false)
+    const notOkValidation2 = flyingSquirrel.validate(honeyBadger)
 
     printErrorMessage(notOkValidation)
+    printErrorMessage(notOkValidation2)
+
+    expect(notOkValidation.ok).toBe(false)
+
+    // All 3 fields are missing so we should get 3 errors.
+    expect(!notOkValidation2.ok && notOkValidation2.errors.length).toBe(3)
 
     const bob = {
       flyingDistance: 90,
@@ -346,11 +356,18 @@ describe('validation core', () => {
   })
 
   it('can validate a discriminated union of types', () => {
-    const validator = v.discriminatedUnion(
-      'type',
-      v.object({ type: v.literal('A'), name: v.string }),
-      v.object({ type: v.literal('B'), data: v.number })
-    )
+    const validator = v
+      .discriminatedUnion(
+        'type',
+        v.object({ type: v.literal('A'), name: v.string }),
+        v.object({ type: v.literal('B'), data: v.number })
+      )
+      .mapErrors(errors =>
+        errors.map(error => {
+          if (error.path === 'type') return { ...error, message: 'OHNO' }
+          return error
+        })
+      )
 
     const okValidation = validator.validate({
       type: 'A',
@@ -374,7 +391,10 @@ describe('validation core', () => {
       data: 10
     })
 
-    expect(notOkValidation.ok).toBe(false)
+    expect(
+      !notOkValidation.ok &&
+        notOkValidation.errors.find(e => e.path === 'type')!.message
+    ).toBe('OHNO')
     expect(notOkValidation2.ok).toBe(false)
     expect(notOkValidation3.ok).toBe(false)
     expect(notOkValidation4.ok).toBe(false)
@@ -957,7 +977,7 @@ describe('validation core', () => {
 
     if (okValidation.ok && okValidation2.ok) {
       // Type assertion.
-      const _arrayType: ArrayType = okValidation.value.map(_ => _)
+      const _arrayType = okValidation.value.map(_ => _)
       const _nonEmpty = okValidation.value[0].toExponential() // The returned array should let you access its first item
       const _objType: ObjType = okValidation2.value
     } else {

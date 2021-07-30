@@ -79,6 +79,17 @@ export class Validator<T> {
   }
 
   /**
+   * Maps the produced errors to new ones. This is the more advanced counterpart of withError.
+   */
+  mapErrors(errorFunction: (errors: ValidationError[]) => ValidationError[]) {
+    return transform(this, (result, _value, _p, context) => {
+      if (result.ok || '_hadCustomError' in context) return result
+      ;(context as any)._hadCustomError = true
+      return Err(errorFunction(result.errors))
+    })
+  }
+
+  /**
    * Refines this string to make it more strongly typed.
    */
   tagged<TAG extends string>(this: Validator<string>): Validator<TAG>
@@ -433,6 +444,7 @@ export function intersection(...validators: any[]): any {
 
   const validator = new Validator((v, context, p) => {
     let result: any = {}
+    const errors: ValidationError[] = []
 
     for (let i = 0; i < validators.length; i++) {
       const validation = validators[i].validate(v, context, p)
@@ -440,11 +452,11 @@ export function intersection(...validators: any[]): any {
       if (validation.ok) {
         result = { ...result, ...(validation.value as object) }
       } else {
-        return validation
+        pushAll(errors, validation.errors)
       }
     }
 
-    return Ok(result)
+    return errors.length ? Err(errors) : Ok(result)
   })
 
   if (allObjectValidators) {
@@ -572,6 +584,7 @@ export function discriminatedUnion<
 
     return map
   }, new Map<Literal, VS[number]>())
+
   return new Validator((v, context, p) => {
     if (v == null) return failure(p, `union member is nullish: ${v}`)
 
@@ -580,12 +593,12 @@ export function discriminatedUnion<
 
     if (typeValue === undefined) {
       return failure(
-        p,
+        getPath(typeKey, p),
         `discriminant key ("${typeKey}") missing in: ${prettifyJson(v)}`
       )
     } else if (!validator) {
       return failure(
-        p,
+        getPath(typeKey, p),
         `discriminant value ("${typeKey}": "${typeValue}") not part of the union`
       )
     }

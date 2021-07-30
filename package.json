@@ -1,6 +1,6 @@
 {
   "name": "idonttrustlikethat",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "sideEffects": false,
   "description": "Validation for TypeScript",
   "license": "MIT",
