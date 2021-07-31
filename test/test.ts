@@ -675,12 +675,28 @@ describe('validation core', () => {
       .filter(value => value !== 'GOD')
       .withError(_ => 'God is not allowed')
 
+    const validator2 = v.string
+      .withError(() => 'string is mandatory')
+      .nullable()
+    const validator3 = v.string
+      .withError(() => 'string is mandatory')
+      .optional()
+    const validator4 = v.string
+      .withError(() => 'string is mandatory')
+      .default('')
+
     const result1 = validator.validate('123')
     const result2 = validator.validate(123)
     const result3 = validator.validate('1')
     const result4 = validator.validate('GOD')
+    const result5 = validator2.validate(null)
+    const result6 = validator3.validate(undefined)
+    const result7 = validator4.validate(undefined)
 
     expect(result1.ok && result1.value).toEqual('123')
+    expect(result5.ok && result5.value).toBe(null)
+    expect(result6.ok && result6.value).toBe(undefined)
+    expect(result7.ok && result7.value).toBe('')
 
     expect(
       !result2.ok &&
