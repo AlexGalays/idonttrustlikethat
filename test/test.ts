@@ -10,7 +10,7 @@ describe('validation core', () => {
   it('can validate that a value is a null', () => {
     expect(v.null.validate(null).ok).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
-    expect((v.null as any).props).toEqual({ __tag: 'null' })
+    expect((v.null as any).__tag).toEqual('null')
 
     expect(v.null.validate(undefined).ok).toBe(false)
     expect(v.null.validate({}).ok).toBe(false)
@@ -23,7 +23,7 @@ describe('validation core', () => {
   it('can validate that a value is a string', () => {
     expect(v.string.validate('hola').ok).toBe(true)
     expect(v.is('hola', v.string)).toBe(true)
-    expect((v.string as any).props).toEqual({ __tag: 'string' })
+    expect((v.string as any).__tag).toEqual('string')
 
     expect(v.string.validate(undefined).ok).toBe(false)
     expect(v.string.validate({}).ok).toBe(false)
@@ -37,7 +37,7 @@ describe('validation core', () => {
     const validator = v.number.map(x => x * 2)
 
     expect((validator.validate(10) as any).value).toBe(20)
-    expect((v.number as any).props).toEqual({ __tag: 'number' })
+    expect((v.number as any).__tag).toEqual('number')
 
     type Number = typeof validator.T
     const num: Number = 33
@@ -105,6 +105,8 @@ describe('validation core', () => {
   it('can validate a filtered value', () => {
     const positiveNumber = v.number.filter(x => x >= 0)
 
+    expect((positiveNumber as any).__tag).toEqual('number')
+
     function isPositiveNumber(n: number) {
       return n >= 0
     }
@@ -121,9 +123,11 @@ describe('validation core', () => {
 
   it('can validate an array', () => {
     const numArray = [1, 2, 3]
-    expect((v.array(v.number).validate(numArray) as Ok<unknown>).value).toEqual(
-      numArray
-    )
+    const av = v.array(v.number)
+ 
+    expect((av.validate(numArray) as Ok<unknown>).value).toEqual(numArray)
+    expect((av as any).__tag).toEqual('array')
+    expect((av as any).__value).toBe(v.number)
 
     const badNumArray = [1, 'oops', 'fuu']
     const badValidation = v.array(v.number).validate(badNumArray)
@@ -195,10 +199,14 @@ describe('validation core', () => {
     const person = v.object(obj)
 
     expect(person.props).toBe(obj)
+    expect((person as any).__tag).toEqual('object')
   })
 
   it('can validate a dictionary', () => {
     const strNumMap = v.dictionary(v.string, v.number)
+
+    expect((strNumMap as any).__tag).toEqual('dictionary')
+    expect((strNumMap as any).__value).toBe(v.number)
 
     const okValidation = strNumMap.validate({
       a: 1,
@@ -261,6 +269,8 @@ describe('validation core', () => {
 
     const flyingSquirrel = v.intersection(flying, squirrel)
 
+    expect((flyingSquirrel as any).__tag).toEqual('object')
+
     const vulture = {
       flyingDistance: 5000,
       family: 'Accipitridae',
@@ -309,6 +319,8 @@ describe('validation core', () => {
 
     expect(okValidation.ok).toBe(true)
     expect(okValidation2.ok).toBe(true)
+
+    expect((helloOrObj as any).__tag).toEqual('union')
 
     const notOkValidation = helloOrObj.validate(111)
     const notOkValidation2 = helloOrObj.validate({ name2: 'hello' })
@@ -443,6 +455,9 @@ describe('validation core', () => {
   it('can validate an optional value', () => {
     const optionalString = v.string.optional()
 
+    expect((optionalString as any).__tag).toEqual('string')
+    expect((optionalString as any).__optional).toBe(true)
+
     const okValidation = optionalString.validate('hello')
     expect(okValidation.ok).toBe(true)
 
@@ -513,6 +528,8 @@ describe('validation core', () => {
       v.union(v.null, v.object({ id: v.string }))
     )
 
+    expect((validator as any).__tag).toEqual('dictionary')
+
     const okValidation = validator.validate({ id: null })
     const okValidation2 = validator.validate({ id: { id: '2' } })
     const notOkValidation = validator.validate({ id: {} })
@@ -526,6 +543,8 @@ describe('validation core', () => {
     const tuple0 = v.tuple()
     const tuple1 = v.tuple(v.number)
     const validator = v.tuple(v.number, v.string, v.null)
+
+    expect((validator as any).__tag).toEqual('tuple')
 
     const okValidation = validator.validate([10, '10', null])
 
@@ -657,6 +676,10 @@ describe('validation core', () => {
   it('can use a default value', () => {
     const validator = v.string.optional().default('yes')
 
+    expect((validator as any).__tag).toEqual('string')
+    expect((validator as any).__optional).toBe(true)
+    expect((validator as any).__default).toEqual('yes')
+
     const validated1 = validator.validate(undefined)
     const validated2 = v.union(v.null, v.string).default('yes').validate(null)
     const validated3 = validator.validate('')
@@ -677,6 +700,8 @@ describe('validation core', () => {
       .withError(_ => 'wrong size')
       .filter(value => value !== 'GOD')
       .withError(_ => 'God is not allowed')
+
+    expect((validator as any).__tag).toEqual('string')
 
     const validator2 = v.string
       .withError(() => 'string is mandatory')
@@ -904,10 +929,17 @@ describe('validation core', () => {
   //--------------------------------------
 
   it('can validate a relative URL', () => {
-    const okValidation = v.relativeUrl().validate('path')
-    const okValidation2 = v
-      .relativeUrl('http://use-this-domain.com/hey')
-      .validate('path/subpath')
+    const v1 = v.relativeUrl()
+    const v2 = v.relativeUrl('http://use-this-domain.com/hey')
+
+    expect((v1 as any).__tag).toEqual('string')
+    expect((v1 as any).__logicalType).toEqual('relativeUrl')
+
+    expect((v2 as any).__tag).toEqual('string')
+    expect((v2 as any).__logicalType).toEqual('relativeUrl')
+
+    const okValidation = v1.validate('path')
+    const okValidation2 = v2.validate('path/subpath')
     const notOkValidation = v
       .relativeUrl('http://use-this-domain.com/hey')
       .validate('////')
@@ -926,6 +958,9 @@ describe('validation core', () => {
     const notOkValidation = v.absoluteUrl.validate('//aa')
     const notOkValidation2 = v.absoluteUrl.validate('/hey')
 
+    expect((v.absoluteUrl as any).__tag).toEqual('string')
+    expect((v.absoluteUrl as any).__logicalType).toEqual('absoluteUrl')
+
     expect(okValidation.ok && okValidation.value).toBe('http://hi.com')
     expect(notOkValidation.ok).toBe(false)
     expect(notOkValidation2.ok).toBe(false)
@@ -934,7 +969,11 @@ describe('validation core', () => {
   })
 
   it('can validate an URL', () => {
-    const okValidation = v.url.validate('http://hi.com')
+    const v1 = v.url
+
+    expect((v1 as any).__tag).toEqual('union')
+
+    const okValidation = v1.validate('http://hi.com')
     const okValidation2 = v.url.validate('path/subpath')
     const notOkValidation = v.url.validate('////')
 
