@@ -190,27 +190,44 @@ export function is<T>(value: Value, validator: Validator<T>): value is T {
 //  Primitives
 //--------------------------------------
 
-const nullValidator: Validator<null> = new Validator((v, _c, p) =>
+function primitive<T>(
+  name: string,
+  validationFunction: (
+    value: unknown,
+    context: Context,
+    path: Path
+  ) => Validation<T>,
+): Validator<T> {
+  const v = new Validator(validationFunction)
+  ;(v as any).props = { __tag: name }
+  return v
+}
+
+const nullValidator: Validator<null> = primitive<null>('null', (v, _c, p) =>
   v === null ? Ok(v) : typeFailure(v, p, 'null')
 )
 
-const undefinedValidator: Validator<undefined> = new Validator((v, _c, p) =>
-  v === void 0 ? Ok(v) : typeFailure(v, p, 'undefined')
-)
+const undefinedValidator: Validator<undefined> = 
+  primitive<undefined>('undefined', (v, _c, p) => {
+    return v === void 0 ? Ok(v) : typeFailure(v, p, 'undefined')
+  })
 
-export const string: Validator<string> = new Validator((v, _c, p) =>
-  typeof v === 'string' ? Ok(v) : typeFailure(v, p, 'string')
-)
+export const string: Validator<string> = 
+  primitive<string>('string', (v, _c, p) => {
+    return typeof v === 'string' ? Ok(v) : typeFailure(v, p, 'string')
+  })
 
-export const number: Validator<number> = new Validator((v, _c, p) =>
-  typeof v === 'number' ? Ok(v) : typeFailure(v, p, 'number')
-)
+export const number: Validator<number> = 
+  primitive<number>('number', (v, _c, p) => {
+    return typeof v === 'number' ? Ok(v) : typeFailure(v, p, 'number')
+  })
 
-export const boolean: Validator<boolean> = new Validator((v, _c, p) =>
-  typeof v === 'boolean' ? Ok(v) : typeFailure(v, p, 'boolean')
-)
+export const boolean: Validator<boolean> = 
+  primitive<boolean>('boolean', (v, _c, p) => {
+    return typeof v === 'boolean' ? Ok(v) : typeFailure(v, p, 'boolean')
+  })
 
-export const unknown: Validator<unknown> = new Validator(Ok)
+export const unknown: Validator<unknown> = primitive<unknown>('unknown', Ok)
 
 //--------------------------------------
 //  array

@@ -10,6 +10,7 @@ describe('validation core', () => {
   it('can validate that a value is a null', () => {
     expect(v.null.validate(null).ok).toBe(true)
     expect(v.is(null, v.null)).toBe(true)
+    expect((v.null as any).props).toEqual({ __tag: 'null' })
 
     expect(v.null.validate(undefined).ok).toBe(false)
     expect(v.null.validate({}).ok).toBe(false)
@@ -22,6 +23,7 @@ describe('validation core', () => {
   it('can validate that a value is a string', () => {
     expect(v.string.validate('hola').ok).toBe(true)
     expect(v.is('hola', v.string)).toBe(true)
+    expect((v.string as any).props).toEqual({ __tag: 'string' })
 
     expect(v.string.validate(undefined).ok).toBe(false)
     expect(v.string.validate({}).ok).toBe(false)
@@ -35,6 +37,7 @@ describe('validation core', () => {
     const validator = v.number.map(x => x * 2)
 
     expect((validator.validate(10) as any).value).toBe(20)
+    expect((v.number as any).props).toEqual({ __tag: 'number' })
 
     type Number = typeof validator.T
     const num: Number = 33
