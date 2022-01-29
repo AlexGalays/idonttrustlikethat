@@ -200,6 +200,34 @@ describe('validation core', () => {
 
     expect(person.props).toBe(obj)
     expect((person as any).__tag).toEqual('object')
+
+    // e.g. Generate shell mapper from metadata
+    const shellVarsToJson = Object.keys(person.props).map(k => {
+      const v = (person.props as any)[k]
+      const shellVar = k.toUpperCase()
+      const tpe = v.__tag
+
+      if (tpe == 'string') {
+        // Quote string
+        return `"${k}": "\$${shellVar}"`
+      } else {
+        return `"${k}": \$${shellVar}`
+      }
+    })
+
+    const shellScript = `cat > /dev/stdout << EOF
+{
+  ${shellVarsToJson.join(',\n  ')}
+}
+EOF`
+
+    expect(shellScript).toEqual(`cat > /dev/stdout << EOF
+{
+  "id": \$ID,
+  "name": "\$NAME",
+  "friends": \$FRIENDS
+}
+EOF`)
   })
 
   it('can validate a dictionary', () => {
