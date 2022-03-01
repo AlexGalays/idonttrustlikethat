@@ -9,10 +9,15 @@ export class Validator<T> {
       context: Context,
       path: Path
     ) => Validation<T>
-  ) {}
+  ) {
+    this.meta = {}
+  }
 
   // Phantom type
   T: T = undefined as any as T
+
+  // Opaque metadata
+  meta: any = undefined
 
   /**
    * Validate any value.
@@ -109,7 +114,7 @@ export class Validator<T> {
   nullable(): UnionValidator<[T, null, undefined]> {
     const n = withSameMeta(this, union(this, nullValidator, undefinedValidator))
 
-    ;(n as any).__nullable = true
+    n.meta.nullable = true
 
     return n
   }
@@ -120,7 +125,7 @@ export class Validator<T> {
   optional(): UnionValidator<[T, undefined]> {
     const u = withSameMeta(this, union(this, undefinedValidator))
 
-    ;(u as any).__optional = true
+    u.meta.optional = true
 
     return u
   }
@@ -134,7 +139,7 @@ export class Validator<T> {
       v === null || v === undefined ? defaultValue : v
     ))
 
-    ;(opt as any).__default = defaultValue
+    opt.meta.default = defaultValue
 
     return opt
   }
@@ -199,15 +204,10 @@ export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).ok
 }
 
-function withSameMeta<A, B>(a: A, b: B): B {
-  const source = a as any
-  const target = b as any
+function withSameMeta<A extends { meta: any }, B extends { meta: any }>(source: A, target: B): B {
+  target.meta = { ...source.meta }
 
-  Object.keys(source).forEach(k => {
-    if (k.startsWith('__')) target[k] = source[k]
-  })
-
-  return b
+  return target
 }
 
 //--------------------------------------
@@ -223,7 +223,7 @@ function primitive<T>(
   ) => Validation<T>,
 ): Validator<T> {
   const v = new Validator(validationFunction)
-  ;(v as any).__tag = name
+  v.meta.tag = name
   return v
 }
 
@@ -282,8 +282,8 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
     return errors.length ? Err(errors) : Ok(validatedArray)
   })
 
-  ;(arrayValidator as any).__tag = 'array'
-  ;(arrayValidator as any).__value = validator
+  arrayValidator.meta.tag = 'array'
+  arrayValidator.meta.value = validator
 
   return arrayValidator
 }
@@ -328,7 +328,7 @@ export function tuple(...validators: any[]): any {
     return errors.length ? Err(errors) : Ok(validatedArray)
   })
 
-  ;(validator as any).__tag = 'tuple'
+  validator.meta.tag = 'tuple'
 
   return validator
 }
@@ -393,8 +393,9 @@ export function object<P extends Props>(props: P): ObjectValidator<P> {
     return errors.length ? Err(errors) : Ok(validatedObject)
   })
 
-  ;(validator as any).__tag = 'object'
-  ;(validator as any).props = props
+  validator.meta.tag = 'object'
+  validator.meta.props = props
+  ;(validator as any).props = props // For compatibility
 
   return validator as ObjectValidator<P>
 }
@@ -447,8 +448,8 @@ export function dictionary<K extends string, V>(
     return errors.length ? Err(errors) : Ok(validatedDict)
   })
 
-  ;(validator as any).__tag = 'dictionary'
-  ;(validator as any).__value = codomain
+  validator.meta.tag = 'dictionary'
+  validator.meta.value = codomain
 
   return validator
 }
@@ -518,13 +519,16 @@ export function intersection(...validators: any[]): any {
   })
 
   if (allObjectValidators) {
-    ;(validator as any).__tag = 'object'
-    ;(validator as any).props = validators.reduce((acc, v) => {
-      Object.assign(acc, v.props)
+    const allProps = validators.reduce((acc, v) => {
+      Object.assign(acc, v.meta.props)
       return acc
     }, {})
+
+    validator.meta.tag = 'object'
+    validator.meta.props = allProps
+    ;(validator as any).props = allProps // For compatibility
   } else {
-    ;(validator as any).__tag = 'intersection'
+    validator.meta.tag = 'intersection'
   }
 
   return validator
@@ -596,8 +600,9 @@ export function union(...validators: any[]): any {
       )
     })
 
-    ;(validator as any).union = validators
-    ;(validator as any).__tag = 'union'
+    ;(validator as any).union = validators // for compatibility
+    validator.meta.union = validators
+    validator.meta.tag = 'union'
 
     return validator
   }
@@ -615,8 +620,9 @@ export function union(...validators: any[]): any {
     return failure(p, `The value ${prettifyJson(v)} is not part of the union`)
   })
 
-  ;(validator as any).union = validators
-  ;(validator as any).__tag = 'union'
+  ;(validator as any).union = validators // for compatibility
+  validator.meta.union = validators
+  validator.meta.tag = 'union'
 
   return validator
 }
@@ -669,7 +675,7 @@ export function discriminatedUnion<
     return validator.validate(v, context, p)
   })
 
-  ;(discriminated as any).__tag = 'discriminatedUnion'
+  discriminated.meta.tag = 'discriminatedUnion'
 
   return discriminated
 }
@@ -774,7 +780,7 @@ function withLogicalType<T>(
   logicalType: string,
   validator: Validator<T>,
 ): Validator<T> {
-  ;(validator as any).__logicalType = logicalType
+  validator.meta.logicalType = logicalType
   return validator
 }
 
