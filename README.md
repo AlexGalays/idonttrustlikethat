@@ -1,5 +1,4 @@
 # idonttrustlikethat
-(Used to be named `validation.ts` but some people struggled to make this `.ts` node module work in TS and we needed a more serious name)  
 
 This module helps validating incoming JSON, Form values, url params, localStorage values, server Environment objects, etc in a concise and type safe manner.  
 The focus of the lib is on small size and an easy API to add new validations.
