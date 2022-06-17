@@ -34,16 +34,20 @@ export class Validator<T> {
    * Maps the validated value or do nothing if this validator returned an error.
    */
   map<B>(fn: (value: T) => B): Validator<B> {
-    return withSameMeta(this, this.and(v => Ok(fn(v))))
+    return withSameMeta(
+      this,
+      this.and(v => Ok(fn(v)))
+    )
   }
 
   /**
    * Filter this validated value or do nothing if this validator returned an error.
    */
   filter(fn: (value: T) => boolean): Validator<T> {
-    return withSameMeta(this, this.and(v =>
-      fn(v) ? Ok(v) : Err(`filter error: ${prettifyJson(v)}"`)
-    ))
+    return withSameMeta(
+      this,
+      this.and(v => (fn(v) ? Ok(v) : Err(`filter error: ${prettifyJson(v)}"`)))
+    )
   }
 
   /**
@@ -59,40 +63,52 @@ export class Validator<T> {
   then<B>(validator: Validator<B>): Validator<B> {
     const self = this
 
-    return withSameMeta(this, new Validator((v, context, p) => {
-      const validated = self.validate(v, context, p)
-      if (!validated.ok) return validated
-      return validator.validate(validated.value, context, p)
-    }))
+    return withSameMeta(
+      this,
+      new Validator((v, context, p) => {
+        const validated = self.validate(v, context, p)
+        if (!validated.ok) return validated
+        return validator.validate(validated.value, context, p)
+      })
+    )
   }
 
   /**
    * Further refines this validator's output.
    */
   and<B>(fn: (value: T) => Result<string, B>): Validator<B> {
-    return withSameMeta(this, transform(this, r => (r.ok ? fn(r.value) : r)))
+    return withSameMeta(
+      this,
+      transform(this, r => (r.ok ? fn(r.value) : r))
+    )
   }
 
   /**
    * Swaps the default error string with a custom one.
    */
   withError(errorFunction: (value: unknown) => string) {
-    return withSameMeta(this, transform(this, (result, value, _p, context) => {
-      if (result.ok || '_hadCustomError' in context) return result
-      ;(context as any)._hadCustomError = true
-      return Err(errorFunction(value))
-    }))
+    return withSameMeta(
+      this,
+      transform(this, (result, value, _p, context) => {
+        if (result.ok || '_hadCustomError' in context) return result
+        ;(context as any)._hadCustomError = true
+        return Err(errorFunction(value))
+      })
+    )
   }
 
   /**
    * Maps the produced errors to new ones. This is the more advanced counterpart of withError.
    */
   mapErrors(errorFunction: (errors: ValidationError[]) => ValidationError[]) {
-    return withSameMeta(this, transform(this, (result, _value, _p, context) => {
-      if (result.ok || '_hadCustomError' in context) return result
-      ;(context as any)._hadCustomError = true
-      return Err(errorFunction(result.errors))
-    }))
+    return withSameMeta(
+      this,
+      transform(this, (result, _value, _p, context) => {
+        if (result.ok || '_hadCustomError' in context) return result
+        ;(context as any)._hadCustomError = true
+        return Err(errorFunction(result.errors))
+      })
+    )
   }
 
   /**
@@ -135,9 +151,12 @@ export class Validator<T> {
    */
   default<D>(defaultValue: D): Validator<NonNullable<T> | D>
   default<D>(defaultValue: D): Validator<unknown> {
-    const opt = withSameMeta(this, this.nullable().map(v =>
-      v === null || v === undefined ? defaultValue : v
-    ))
+    const opt = withSameMeta(
+      this,
+      this.nullable().map(v =>
+        v === null || v === undefined ? defaultValue : v
+      )
+    )
 
     opt.meta.default = defaultValue
 
@@ -204,7 +223,10 @@ export function is<T>(value: Value, validator: Validator<T>): value is T {
   return validator.validate(value).ok
 }
 
-function withSameMeta<A extends { meta: any }, B extends { meta: any }>(source: A, target: B): B {
+function withSameMeta<A extends { meta: any }, B extends { meta: any }>(
+  source: A,
+  target: B
+): B {
   target.meta = { ...source.meta }
 
   return target
@@ -220,7 +242,7 @@ function primitive<T>(
     value: unknown,
     context: Context,
     path: Path
-  ) => Validation<T>,
+  ) => Validation<T>
 ): Validator<T> {
   const v = new Validator(validationFunction)
   v.meta.tag = name
@@ -231,25 +253,33 @@ const nullValidator: Validator<null> = primitive<null>('null', (v, _c, p) =>
   v === null ? Ok(v) : typeFailure(v, p, 'null')
 )
 
-const undefinedValidator: Validator<undefined> = 
-  primitive<undefined>('undefined', (v, _c, p) => {
+const undefinedValidator: Validator<undefined> = primitive<undefined>(
+  'undefined',
+  (v, _c, p) => {
     return v === void 0 ? Ok(v) : typeFailure(v, p, 'undefined')
-  })
+  }
+)
 
-export const string: Validator<string> = 
-  primitive<string>('string', (v, _c, p) => {
+export const string: Validator<string> = primitive<string>(
+  'string',
+  (v, _c, p) => {
     return typeof v === 'string' ? Ok(v) : typeFailure(v, p, 'string')
-  })
+  }
+)
 
-export const number: Validator<number> = 
-  primitive<number>('number', (v, _c, p) => {
+export const number: Validator<number> = primitive<number>(
+  'number',
+  (v, _c, p) => {
     return typeof v === 'number' ? Ok(v) : typeFailure(v, p, 'number')
-  })
+  }
+)
 
-export const boolean: Validator<boolean> = 
-  primitive<boolean>('boolean', (v, _c, p) => {
+export const boolean: Validator<boolean> = primitive<boolean>(
+  'boolean',
+  (v, _c, p) => {
     return typeof v === 'boolean' ? Ok(v) : typeFailure(v, p, 'boolean')
-  })
+  }
+)
 
 export const unknown: Validator<unknown> = primitive<unknown>('unknown', Ok)
 
@@ -294,9 +324,9 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
 
 export function tuple<VS extends AnyValidator[]>(
   ...vs: VS
-): Validator<
-  { [NUM in keyof VS]: VS[NUM] extends AnyValidator ? VS[NUM]['T'] : never }
->
+): Validator<{
+  [NUM in keyof VS]: VS[NUM] extends AnyValidator ? VS[NUM]['T'] : never
+}>
 
 export function tuple(...validators: any[]): any {
   const validator = new Validator((v, context, p) => {
@@ -354,8 +384,7 @@ type MandatoryKeys<T> = {
 type ObjectWithOptionalKeysOf<P extends Record<string, unknown>> = Id<
   {
     [K in MandatoryKeys<P>]: P[K]
-  } &
-    { [K in OptionalKeys<P>]?: P[K] }
+  } & { [K in OptionalKeys<P>]?: P[K] }
 >
 
 export type ObjectOf<P extends Props> = ObjectWithOptionalKeysOf<Unpack<P>>
@@ -438,7 +467,7 @@ export function dictionary<K extends string, V>(
         pushAll(
           errors,
           error.map(e => ({
-            path,
+            path: e.path,
             message: `value error: ${e.message}`
           }))
         )
@@ -633,13 +662,9 @@ export function union(...validators: any[]): any {
 
 export function discriminatedUnion<
   TYPEKEY extends string,
-  VS extends ObjectValidator<
-    {
-      [K in TYPEKEY]:
-        | LiteralValidator<any>
-        | UnionValidatorOfLiterals<Literal[]>
-    }
-  >[]
+  VS extends ObjectValidator<{
+    [K in TYPEKEY]: LiteralValidator<any> | UnionValidatorOfLiterals<Literal[]>
+  }>[]
 >(typeKey: TYPEKEY, ...vs: VS): Validator<VS[number]['T']> {
   const validatorByType = vs.reduce((map, validator) => {
     const v: LiteralValidator<any> | UnionValidatorOfLiterals<Literal[]> =
@@ -778,7 +803,7 @@ export const snakeCaseTransformation = (key: string): string =>
 
 function withLogicalType<T>(
   logicalType: string,
-  validator: Validator<T>,
+  validator: Validator<T>
 ): Validator<T> {
   validator.meta.logicalType = logicalType
   return validator
@@ -788,8 +813,8 @@ function withLogicalType<T>(
 //  url
 //--------------------------------------
 
-export const relativeUrl =
-  (baseUrl: string = 'http://some-domain.com') => withLogicalType(
+export const relativeUrl = (baseUrl: string = 'http://some-domain.com') =>
+  withLogicalType(
     'relativeUrl',
     string.and(str => {
       try {
@@ -798,16 +823,20 @@ export const relativeUrl =
       } catch (err) {
         return Err(`${str} is not a relative URL for baseURL: ${baseUrl}`)
       }
-    }))
+    })
+  )
 
-export const absoluteUrl = withLogicalType('absoluteUrl', string.and(str => {
-  try {
-    new URL(str)
-    return Ok(str)
-  } catch (err) {
-    return Err(`${str} is not an absolute URL`)
-  }
-}))
+export const absoluteUrl = withLogicalType(
+  'absoluteUrl',
+  string.and(str => {
+    try {
+      new URL(str)
+      return Ok(str)
+    } catch (err) {
+      return Err(`${str} is not an absolute URL`)
+    }
+  })
+)
 
 export const url = union(absoluteUrl, relativeUrl())
 
@@ -819,7 +848,8 @@ export const booleanFromString = withLogicalType(
   'boolean',
   union('true', 'false')
     .withError(v => `Expected "true" | "false", got: ${v}`)
-    .map(str => str === 'true'))
+    .map(str => str === 'true')
+)
 
 export const numberFromString = withLogicalType(
   'number',
@@ -828,13 +858,15 @@ export const numberFromString = withLogicalType(
     return Number.isNaN(parsed)
       ? Err(`"${str}" is not a stringified number`)
       : Ok(parsed)
-  }))
+  })
+)
 
 export const intFromString = withLogicalType(
   'integer',
   numberFromString.and(num => {
     return Number.isInteger(num) ? Ok(num) : Err(`${num} is not an int`)
-  }))
+  })
+)
 
 //--------------------------------------
 //  generic refinement functions

@@ -124,7 +124,7 @@ describe('validation core', () => {
   it('can validate an array', () => {
     const numArray = [1, 2, 3]
     const av = v.array(v.number)
- 
+
     expect((av.validate(numArray) as Ok<unknown>).value).toEqual(numArray)
     expect(av.meta.tag).toEqual('array')
     expect(av.meta.value).toBe(v.number)
@@ -244,28 +244,36 @@ EOF`)
 
     expect(okValidation.ok).toBe(true)
 
-    const notOkValidation = strNumMap.validate({
-      a: 1,
-      b: 2,
-      c: '3'
+    const notOkValidation = v.object({ dic: strNumMap }).validate({
+      dic: {
+        a: 1,
+        b: 2,
+        c: '3'
+      }
     })
 
     expect(notOkValidation.ok).toBe(false)
+    printErrorMessage(notOkValidation)
 
-    // domain = more precise than strings
-    const enumNumMap = v.dictionary(v.union(...(['a', 'b'] as const)), v.number)
+    // domain = more precise than strings and object values
+    const enumNumMap = v.dictionary(
+      v.union(...(['a', 'b'] as const)),
+      v.object({ id: v.number })
+    )
 
-    const okValidation2 = enumNumMap.validate({ a: 1, b: 2 })
+    const okValidation2 = enumNumMap.validate({ a: { id: 1 }, b: { id: 2 } })
 
     expect(okValidation2.ok).toBe(true)
 
-    const notOkValidation2 = enumNumMap.validate({
-      a: 1,
-      bb: 2,
-      c: '3'
+    const notOkValidation2 = v.object({ dic: enumNumMap }).validate({
+      dic: {
+        a: { id: 1 },
+        bb: { id: '2' },
+        c: { id: '3' }
+      }
     })
 
-    expect(!notOkValidation2.ok && notOkValidation2.errors.length).toBe(3)
+    expect(!notOkValidation2.ok && notOkValidation2.errors.length).toBe(4)
     printErrorMessage(notOkValidation2)
   })
 
