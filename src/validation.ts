@@ -319,6 +319,81 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
 }
 
 //--------------------------------------
+//  set
+//--------------------------------------
+
+export function set<A>(validator: Validator<A>): Validator<Set<A>> {
+  const setValidator = new Validator((v, context, p) => {
+    if (!(v instanceof Set)) return typeFailure(v, p, 'set')
+
+    const validatedSet: Set<A> = new Set([])
+    const errors: ValidationError[] = []
+
+    for (let i = 0, vs = v.values(); i < v.size; i++) {
+      const item = vs.next().value
+      const validation = validator.validate(
+        item,
+        { ...context },
+        getPath(String(i), p)
+      )
+
+      if (validation.ok) {
+        validatedSet.add(validation.value)
+      } else {
+        pushAll(errors, validation.errors)
+      }
+    }
+
+    return errors.length ? Err(errors) : Ok(validatedSet)
+  })
+
+  setValidator.meta.tag = 'set'
+  setValidator.meta.value = validator
+
+  return setValidator
+}
+
+export function arrayAsSet<A>(validator: Validator<A>, allowDuplicate: boolean = false): Validator<Set<A>> {
+  const setValidator = new Validator((v, context, p) => {
+    if (!Array.isArray(v)) return typeFailure(v, p, 'array')
+
+    const validatedSet: Set<A> = new Set<A>([])
+    const errors: ValidationError[] = []
+
+    for (let i = 0; i < v.length; i++) {
+      const item = v[i]
+      const path = getPath(String(i), p)
+
+      const validation = validator.validate(
+        item,
+        { ...context },
+        path
+      )
+
+      if (validation.ok) {
+        if (!allowDuplicate && validatedSet.has(validation.value)) {
+          errors.push({
+            message: `Duplicate value in set: ${validation.value}`,
+            path
+          })
+        } else {
+          validatedSet.add(validation.value)
+        }
+      } else {
+        pushAll(errors, validation.errors)
+      }
+    }
+
+    return errors.length ? Err(errors) : Ok(validatedSet)
+  })
+
+  setValidator.meta.tag = 'set'
+  setValidator.meta.value = validator
+
+  return setValidator
+}
+
+//--------------------------------------
 //  tuple
 //--------------------------------------
 
