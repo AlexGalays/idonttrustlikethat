@@ -141,16 +141,24 @@ describe('validation core', () => {
     expect(badValidation.errors.length).toBe(2)
   })
 
-  it('can validate an set', () => {
-    const numSet = new Set([1, 2, 3])
-    const av = v.set(v.number)
+  it('can validate a readonly array', () => {
+    const numArray: readonly number[] = [1, 2, 3]
+    const av = v.readonlyArray(v.number)
+    const result = av.validate(numArray)
 
-    expect((av.validate(numSet) as Ok<unknown>).value).toEqual(numSet)
-    expect(av.meta.tag).toEqual('set')
+    expect((result as Ok<unknown>).value).toEqual(numArray)
+    expect(av.meta.tag).toEqual('array')
     expect(av.meta.value).toBe(v.number)
 
-    const badNumSet = new Set([1, 'oops', 'fuu'])
-    const badValidation = v.set(v.number).validate(badNumSet)
+    if (!result.ok) {
+      throw new Error('Should be a Success')
+    }
+
+    // Check type is readonly
+    const _v: readonly number[] = result.value
+
+    const badNumArray = [1, 'oops', 'fuu']
+    const badValidation = v.readonlyArray(v.number).validate(badNumArray)
 
     printErrorMessage(badValidation)
 
