@@ -318,6 +318,54 @@ export function array<A>(validator: Validator<A>): Validator<A[]> {
   return arrayValidator
 }
 
+export function readonlyArray<A>(validator: Validator<A>): Validator<readonly A[]> {
+  return array<A>(validator).map(arr => arr as ReadonlyArray<A>)
+}
+
+//--------------------------------------
+//  set
+//--------------------------------------
+
+export function arrayAsSet<A>(validator: Validator<A>, allowDuplicate: boolean = false): Validator<Set<A>> {
+  const setValidator = new Validator((v, context, p) => {
+    if (!Array.isArray(v)) return typeFailure(v, p, 'array')
+
+    const validatedSet: Set<A> = new Set<A>([])
+    const errors: ValidationError[] = []
+
+    for (let i = 0; i < v.length; i++) {
+      const item = v[i]
+      const path = getPath(String(i), p)
+
+      const validation = validator.validate(
+        item,
+        { ...context },
+        path
+      )
+
+      if (validation.ok) {
+        if (!allowDuplicate && validatedSet.has(validation.value)) {
+          errors.push({
+            message: `Duplicate value in set: ${validation.value}`,
+            path
+          })
+        } else {
+          validatedSet.add(validation.value)
+        }
+      } else {
+        pushAll(errors, validation.errors)
+      }
+    }
+
+    return errors.length ? Err(errors) : Ok(validatedSet)
+  })
+
+  setValidator.meta.tag = 'set'
+  setValidator.meta.value = validator
+
+  return setValidator
+}
+
 //--------------------------------------
 //  tuple
 //--------------------------------------

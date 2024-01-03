@@ -141,6 +141,67 @@ describe('validation core', () => {
     expect(badValidation.errors.length).toBe(2)
   })
 
+  it('can validate a readonly array', () => {
+    const numArray: readonly number[] = [1, 2, 3]
+    const av = v.readonlyArray(v.number)
+    const result = av.validate(numArray)
+
+    expect((result as Ok<unknown>).value).toEqual(numArray)
+    expect(av.meta.tag).toEqual('array')
+    expect(av.meta.value).toBe(v.number)
+
+    if (!result.ok) {
+      throw new Error('Should be a Success')
+    }
+
+    // Check type is readonly
+    const _v: readonly number[] = result.value
+
+    const badNumArray = [1, 'oops', 'fuu']
+    const badValidation = v.readonlyArray(v.number).validate(badNumArray)
+
+    printErrorMessage(badValidation)
+
+    if (badValidation.ok) {
+      throw new Error('Should be an Error')
+    }
+
+    expect(badValidation.errors.length).toBe(2)
+  })
+
+  it('can validate an array as set', () => {
+    const numArray = [1, 2, 3]
+    const av = v.arrayAsSet(v.number)
+
+    expect((av.validate(numArray) as Ok<unknown>).value).toEqual(new Set(numArray))
+    expect(av.meta.tag).toEqual('set')
+    expect(av.meta.value).toBe(v.number)
+
+    const badNumArray = [1, 'oops', 'fuu']
+    const badValidation = v.arrayAsSet(v.number).validate(badNumArray)
+
+    printErrorMessage(badValidation)
+
+    if (badValidation.ok) {
+      throw new Error('Should be an Error')
+    }
+
+    expect(badValidation.errors.length).toBe(2)
+
+    const duplicateArray = ['foo', 'bar', 'bar']
+    const duplicateValidation = v.arrayAsSet(v.string).validate(duplicateArray)
+
+    printErrorMessage(duplicateValidation)
+
+    if (duplicateValidation.ok) {
+      throw new Error('Should be an Error')
+    }
+
+    expect(duplicateValidation.errors.map(e => e.message)).toEqual([
+      'Duplicate value in set: bar'
+    ])
+  })
+
   it('can validate an object', () => {
     const person = v.object({
       id: v.number,
