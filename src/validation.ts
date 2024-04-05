@@ -527,6 +527,7 @@ export function dictionary<K extends string, V>(
 
   validator.meta.tag = 'dictionary'
   validator.meta.value = codomain
+  validator.meta.key = domain
 
   return validator
 }
@@ -748,7 +749,9 @@ export function discriminatedUnion<
     return validator.validate(v, context, p)
   })
 
+  discriminated.meta.discriminatedUnion = vs
   discriminated.meta.tag = 'discriminatedUnion'
+  discriminated.meta.typeKey = typeKey
 
   return discriminated
 }
