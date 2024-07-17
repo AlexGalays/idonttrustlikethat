@@ -172,32 +172,54 @@ describe('validation core', () => {
   it('can validate an array as set', () => {
     const numArray = [1, 2, 3]
     const av = v.arrayAsSet(v.number)
+    const rs = v.arrayAsReadonlySet(v.number)
 
     expect((av.validate(numArray) as Ok<unknown>).value).toEqual(new Set(numArray))
     expect(av.meta.tag).toEqual('set')
     expect(av.meta.value).toBe(v.number)
 
+    expect((rs.validate(numArray) as Ok<unknown>).value).toEqual(new Set(numArray))
+    expect(rs.meta.tag).toEqual('set')
+    expect(rs.meta.value).toBe(v.number)
+
     const badNumArray = [1, 'oops', 'fuu']
-    const badValidation = v.arrayAsSet(v.number).validate(badNumArray)
+    const badValidation1 = v.arrayAsSet(v.number).validate(badNumArray)
+    const badValidation2 = v.arrayAsReadonlySet(v.number).validate(badNumArray)
 
-    printErrorMessage(badValidation)
+    printErrorMessage(badValidation1)
+    printErrorMessage(badValidation2)
 
-    if (badValidation.ok) {
-      throw new Error('Should be an Error')
+    if (badValidation1.ok) {
+      throw new Error('Should be an Error #1')
     }
 
-    expect(badValidation.errors.length).toBe(2)
+    if (badValidation2.ok) {
+      throw new Error('Should be an Error #2')
+    }
+
+    expect(badValidation1.errors.length).toBe(2)
+    expect(badValidation2.errors.length).toBe(2)
 
     const duplicateArray = ['foo', 'bar', 'bar']
-    const duplicateValidation = v.arrayAsSet(v.string).validate(duplicateArray)
+    const duplicateValidation1 = v.arrayAsSet(v.string).validate(duplicateArray)
+    const duplicateValidation2 = v.arrayAsReadonlySet(v.string).validate(duplicateArray)
 
-    printErrorMessage(duplicateValidation)
+    printErrorMessage(duplicateValidation1)
+    printErrorMessage(duplicateValidation2)
 
-    if (duplicateValidation.ok) {
-      throw new Error('Should be an Error')
+    if (duplicateValidation1.ok) {
+      throw new Error('Should be an Error #1')
     }
 
-    expect(duplicateValidation.errors.map(e => e.message)).toEqual([
+    if (duplicateValidation2.ok) {
+      throw new Error('Should be an Error #2')
+    }
+
+    expect(duplicateValidation1.errors.map(e => e.message)).toEqual([
+      'Duplicate value in set: bar'
+    ])
+
+    expect(duplicateValidation2.errors.map(e => e.message)).toEqual([
       'Duplicate value in set: bar'
     ])
   })

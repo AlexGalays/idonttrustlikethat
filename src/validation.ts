@@ -366,6 +366,10 @@ export function arrayAsSet<A>(validator: Validator<A>, allowDuplicate: boolean =
   return setValidator
 }
 
+export function arrayAsReadonlySet<A>(validator: Validator<A>): Validator<ReadonlySet<A>> {
+  return arrayAsSet<A>(validator).map(s => s as ReadonlySet<A>)
+}
+
 //--------------------------------------
 //  tuple
 //--------------------------------------
